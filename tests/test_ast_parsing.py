@@ -12,7 +12,7 @@ from unittest.mock import patch, mock_open, MagicMock
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from main import (
+from redis_test_mcp_tools.tools.ast_tools import (
     get_ast_from_file,
     extract_docstring,
     get_type_annotation,
@@ -31,13 +31,13 @@ class TestGetASTFromFile:
     
     def test_valid_python_file(self, temp_python_file):
         """Test parsing a valid Python file"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = get_ast_from_file(temp_python_file.name)
             assert isinstance(result, ast.Module)
     
     def test_nonexistent_file(self):
         """Test handling of non-existent file"""
-        with patch('config.config.project_root', Path("/tmp")):
+        with patch('redis_test_mcp_tools.config.config.project_root', Path("/tmp")):
             result = get_ast_from_file("nonexistent.py")
             assert isinstance(result, dict)
             assert 'error' in result
@@ -48,7 +48,7 @@ class TestGetASTFromFile:
         text_file = temp_project_dir / "test.txt"
         text_file.write_text("This is not Python code")
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = get_ast_from_file("test.txt")
             assert isinstance(result, dict)
             assert 'error' in result
@@ -56,7 +56,7 @@ class TestGetASTFromFile:
     
     def test_syntax_error_file(self, invalid_python_file):
         """Test handling of file with syntax errors"""
-        with patch('config.config.project_root', invalid_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', invalid_python_file.parent):
             result = get_ast_from_file(invalid_python_file.name)
             assert isinstance(result, dict)
             assert 'error' in result
@@ -67,7 +67,7 @@ class TestGetASTFromFile:
         python_file = temp_project_dir / "test.py"
         python_file.write_text("print('hello')")
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             with patch('builtins.open', side_effect=IOError("Permission denied")):
                 result = get_ast_from_file("test.py")
                 assert isinstance(result, dict)
@@ -321,7 +321,7 @@ class TestParseModuleAST:
     
     def test_valid_module(self, temp_python_file):
         """Test parsing a valid module"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = parse_module_ast(temp_python_file.name)
             
             assert 'error' not in result
@@ -333,7 +333,7 @@ class TestParseModuleAST:
     
     def test_invalid_module(self, invalid_python_file):
         """Test parsing an invalid module"""
-        with patch('config.config.project_root', invalid_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', invalid_python_file.parent):
             result = parse_module_ast(invalid_python_file.name)
             
             assert 'error' in result
@@ -341,7 +341,7 @@ class TestParseModuleAST:
     
     def test_module_imports(self, temp_python_file):
         """Test that imports are correctly identified"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = parse_module_ast(temp_python_file.name)
             
             imports = result['imports']
@@ -359,7 +359,7 @@ class TestGetFunctionDetails:
     
     def test_existing_function(self, temp_python_file):
         """Test getting details for existing function"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = get_function_details(temp_python_file.name, "simple_function")
             
             assert 'error' not in result
@@ -369,7 +369,7 @@ class TestGetFunctionDetails:
     
     def test_nonexistent_function(self, temp_python_file):
         """Test getting details for non-existent function"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = get_function_details(temp_python_file.name, "nonexistent_function")
             
             assert 'error' in result
@@ -377,7 +377,7 @@ class TestGetFunctionDetails:
     
     def test_invalid_file(self):
         """Test getting function details from invalid file"""
-        with patch('config.config.project_root', Path("/tmp")):
+        with patch('redis_test_mcp_tools.config.config.project_root', Path("/tmp")):
             result = get_function_details("nonexistent.py", "some_function")
             
             assert 'error' in result
@@ -388,7 +388,7 @@ class TestGetClassDetails:
     
     def test_existing_class(self, temp_python_file):
         """Test getting details for existing class"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = get_class_details(temp_python_file.name, "SampleClass")
             
             assert 'error' not in result
@@ -398,7 +398,7 @@ class TestGetClassDetails:
     
     def test_nonexistent_class(self, temp_python_file):
         """Test getting details for non-existent class"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = get_class_details(temp_python_file.name, "NonexistentClass")
             
             assert 'error' in result
@@ -406,7 +406,7 @@ class TestGetClassDetails:
     
     def test_invalid_file(self):
         """Test getting class details from invalid file"""
-        with patch('config.config.project_root', Path("/tmp")):
+        with patch('redis_test_mcp_tools.config.config.project_root', Path("/tmp")):
             result = get_class_details("nonexistent.py", "SomeClass")
             
             assert 'error' in result
@@ -417,7 +417,7 @@ class TestFindImportsInFile:
     
     def test_find_imports(self, temp_python_file):
         """Test finding imports in a file"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = find_imports_in_file(temp_python_file.name)
             
             assert 'error' not in result
@@ -432,7 +432,7 @@ class TestFindImportsInFile:
     
     def test_imports_structure(self, temp_python_file):
         """Test the structure of import information"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = find_imports_in_file(temp_python_file.name)
             
             imports = result['imports']
@@ -447,7 +447,7 @@ class TestFindImportsInFile:
     
     def test_invalid_file_imports(self):
         """Test finding imports in invalid file"""
-        with patch('config.config.project_root', Path("/tmp")):
+        with patch('redis_test_mcp_tools.config.config.project_root', Path("/tmp")):
             result = find_imports_in_file("nonexistent.py")
             
             assert 'error' in result
@@ -458,7 +458,7 @@ class TestGetTypeHintsFromFile:
     
     def test_find_type_hints(self, temp_python_file):
         """Test finding type hints in a file"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = get_type_hints_from_file(temp_python_file.name)
             
             assert 'error' not in result
@@ -469,7 +469,7 @@ class TestGetTypeHintsFromFile:
     
     def test_function_type_hints(self, temp_python_file):
         """Test function type hints extraction"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = get_type_hints_from_file(temp_python_file.name)
             
             functions = result['functions']
@@ -485,7 +485,7 @@ class TestGetTypeHintsFromFile:
     
     def test_class_type_hints(self, temp_python_file):
         """Test class type hints extraction"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = get_type_hints_from_file(temp_python_file.name)
             
             classes = result['classes']
@@ -500,7 +500,7 @@ class TestGetTypeHintsFromFile:
     
     def test_invalid_file_type_hints(self):
         """Test getting type hints from invalid file"""
-        with patch('config.config.project_root', Path("/tmp")):
+        with patch('redis_test_mcp_tools.config.config.project_root', Path("/tmp")):
             result = get_type_hints_from_file("nonexistent.py")
             
             assert 'error' in result 

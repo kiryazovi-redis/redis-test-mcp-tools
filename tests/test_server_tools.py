@@ -32,7 +32,7 @@ except ImportError:
 
     types = MockTypes()
 
-from main import (
+from redis_test_mcp_tools.server import (
     server,
     handle_list_tools,
     handle_call_tool
@@ -99,7 +99,7 @@ class TestHandleCallTool:
     @pytest.mark.asyncio
     async def test_handle_call_tool_parse_module(self, temp_python_file):
         """Test calling parse_module tool"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = await handle_call_tool("parse_module", {"file_path": temp_python_file.name})
             
             assert isinstance(result, list)
@@ -116,7 +116,7 @@ class TestHandleCallTool:
     @pytest.mark.asyncio
     async def test_handle_call_tool_get_function_details(self, temp_python_file):
         """Test calling get_function_details tool"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = await handle_call_tool("get_function_details", {
                 "file_path": temp_python_file.name,
                 "function_name": "simple_function"
@@ -133,7 +133,7 @@ class TestHandleCallTool:
     @pytest.mark.asyncio
     async def test_handle_call_tool_get_class_details(self, temp_python_file):
         """Test calling get_class_details tool"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = await handle_call_tool("get_class_details", {
                 "file_path": temp_python_file.name,
                 "class_name": "SampleClass"
@@ -150,7 +150,7 @@ class TestHandleCallTool:
     @pytest.mark.asyncio
     async def test_handle_call_tool_find_imports(self, temp_python_file):
         """Test calling find_imports tool"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = await handle_call_tool("find_imports", {
                 "file_path": temp_python_file.name
             })
@@ -166,7 +166,7 @@ class TestHandleCallTool:
     @pytest.mark.asyncio
     async def test_handle_call_tool_get_type_hints(self, temp_python_file):
         """Test calling get_type_hints tool"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = await handle_call_tool("get_type_hints", {
                 "file_path": temp_python_file.name
             })
@@ -182,7 +182,7 @@ class TestHandleCallTool:
     @pytest.mark.asyncio
     async def test_handle_call_tool_find_python_files(self, temp_project_dir):
         """Test calling find_python_files tool"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = await handle_call_tool("find_python_files", {})
             
             assert isinstance(result, list)
@@ -196,7 +196,7 @@ class TestHandleCallTool:
     @pytest.mark.asyncio
     async def test_handle_call_tool_find_python_files_with_directory(self, temp_project_dir):
         """Test calling find_python_files tool with directory"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = await handle_call_tool("find_python_files", {
                 "directory": "src"
             })
@@ -211,7 +211,7 @@ class TestHandleCallTool:
     @pytest.mark.asyncio
     async def test_handle_call_tool_read_file(self, temp_python_file):
         """Test calling read_file tool"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = await handle_call_tool("read_file", {
                 "file_path": temp_python_file.name
             })
@@ -228,7 +228,7 @@ class TestHandleCallTool:
     @pytest.mark.asyncio
     async def test_handle_call_tool_read_file_with_max_size(self, temp_python_file):
         """Test calling read_file tool with max_size"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = await handle_call_tool("read_file", {
                 "file_path": temp_python_file.name,
                 "max_size": 100
@@ -245,7 +245,7 @@ class TestHandleCallTool:
     @pytest.mark.asyncio
     async def test_handle_call_tool_get_directory_structure(self, temp_project_dir):
         """Test calling get_directory_structure tool"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = await handle_call_tool("get_directory_structure", {})
             
             assert isinstance(result, list)
@@ -260,7 +260,7 @@ class TestHandleCallTool:
     @pytest.mark.asyncio
     async def test_handle_call_tool_get_directory_structure_with_options(self, temp_project_dir):
         """Test calling get_directory_structure tool with options"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = await handle_call_tool("get_directory_structure", {
                 "directory": "src",
                 "max_depth": 2
@@ -277,7 +277,7 @@ class TestHandleCallTool:
     @pytest.mark.asyncio
     async def test_handle_call_tool_get_project_info(self, temp_project_dir):
         """Test calling get_project_info tool"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = await handle_call_tool("get_project_info", {})
             
             assert isinstance(result, list)
@@ -293,7 +293,7 @@ class TestHandleCallTool:
     @pytest.mark.asyncio
     async def test_handle_call_tool_analyze_test_files(self, temp_project_dir):
         """Test calling analyze_test_files tool"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = await handle_call_tool("analyze_test_files", {})
             
             assert isinstance(result, list)
@@ -308,7 +308,7 @@ class TestHandleCallTool:
     @pytest.mark.asyncio
     async def test_handle_call_tool_analyze_test_files_with_directory(self, temp_project_dir):
         """Test calling analyze_test_files tool with directory"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = await handle_call_tool("analyze_test_files", {
                 "directory": "tests"
             })
@@ -323,7 +323,7 @@ class TestHandleCallTool:
     @pytest.mark.asyncio
     async def test_handle_call_tool_get_test_patterns(self, temp_project_dir):
         """Test calling get_test_patterns tool"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = await handle_call_tool("get_test_patterns", {})
             
             assert isinstance(result, list)
@@ -337,7 +337,7 @@ class TestHandleCallTool:
     @pytest.mark.asyncio
     async def test_handle_call_tool_find_untested_code(self, temp_project_dir):
         """Test calling find_untested_code tool"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = await handle_call_tool("find_untested_code", {})
             
             assert isinstance(result, list)
@@ -351,7 +351,7 @@ class TestHandleCallTool:
     @pytest.mark.asyncio
     async def test_handle_call_tool_find_untested_code_with_directories(self, temp_project_dir):
         """Test calling find_untested_code tool with directories"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = await handle_call_tool("find_untested_code", {
                 "source_dir": "src",
                 "test_dir": "tests"
@@ -367,7 +367,7 @@ class TestHandleCallTool:
     @pytest.mark.asyncio
     async def test_handle_call_tool_suggest_test_cases(self, temp_python_file):
         """Test calling suggest_test_cases tool"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = await handle_call_tool("suggest_test_cases", {
                 "file_path": temp_python_file.name
             })
@@ -383,7 +383,7 @@ class TestHandleCallTool:
     @pytest.mark.asyncio
     async def test_handle_call_tool_suggest_test_cases_with_options(self, temp_python_file):
         """Test calling suggest_test_cases tool with options"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = await handle_call_tool("suggest_test_cases", {
                 "file_path": temp_python_file.name,
                 "function_name": "simple_function",
@@ -401,7 +401,7 @@ class TestHandleCallTool:
     @pytest.mark.asyncio
     async def test_handle_call_tool_get_test_coverage_info(self, temp_project_dir):
         """Test calling get_test_coverage_info tool"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = await handle_call_tool("get_test_coverage_info", {})
             
             assert isinstance(result, list)
@@ -418,7 +418,7 @@ class TestHandleCallTool:
         coverage_file = temp_project_dir / "custom_coverage"
         coverage_file.write_text("mock coverage")
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = await handle_call_tool("get_test_coverage_info", {
                 "coverage_file": str(coverage_file)
             })
@@ -440,7 +440,7 @@ class TestHandleCallTool:
     @pytest.mark.asyncio
     async def test_handle_call_tool_error_handling(self, temp_project_dir):
         """Test error handling in handle_call_tool"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = await handle_call_tool("parse_module", {
                 "file_path": "nonexistent.py"
             })
@@ -526,12 +526,12 @@ class TestServerToolsEdgeCases:
     @pytest.mark.asyncio
     async def test_handle_call_tool_json_serialization_error(self):
         """Test handling of JSON serialization errors"""
-        with patch('main.parse_module_ast', return_value={'circular': None}):
+        with patch('redis_test_mcp_tools.tools.ast_tools.parse_module_ast', return_value={'circular': None}):
             # Create a circular reference that can't be serialized
             data = {'test': 'value'}
             data['circular'] = data
             
-            with patch('main.parse_module_ast', return_value=data):
+            with patch('redis_test_mcp_tools.tools.ast_tools.parse_module_ast', return_value=data):
                 result = await handle_call_tool("parse_module", {
                     "file_path": "test.py"
                 })
@@ -548,7 +548,7 @@ class TestServerToolsEdgeCases:
     @pytest.mark.asyncio
     async def test_handle_call_tool_exception_handling(self):
         """Test handling of exceptions in tool calls"""
-        with patch('main.parse_module_ast', side_effect=Exception("Test exception")):
+        with patch('redis_test_mcp_tools.tools.ast_tools.parse_module_ast', side_effect=Exception("Test exception")):
             result = await handle_call_tool("parse_module", {
                 "file_path": "test.py"
             })

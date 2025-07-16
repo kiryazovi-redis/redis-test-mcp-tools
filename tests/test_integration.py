@@ -16,15 +16,22 @@ from unittest.mock import patch, MagicMock
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from config import MCPServerConfig
-from main import (
-    parse_module_ast,
+from redis_test_mcp_tools.config import MCPServerConfig
+from redis_test_mcp_tools.tools.ast_tools import (
+    parse_module_ast
+)
+from redis_test_mcp_tools.tools.file_tools import (
     find_python_files,
     read_file_content,
-    get_project_info,
+    get_project_info
+)
+from redis_test_mcp_tools.tools.test_tools import (
     analyze_test_files,
     suggest_test_cases
 )
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 from run_server import check_dependencies, run_server
 
 
@@ -33,7 +40,7 @@ class TestEndToEndWorkflow:
     
     def test_project_analysis_workflow(self, temp_project_dir):
         """Test complete project analysis workflow"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             # Step 1: Get project info
             project_info = get_project_info()
             assert 'name' in project_info
@@ -60,7 +67,7 @@ class TestEndToEndWorkflow:
     
     def test_test_analysis_workflow(self, temp_project_dir):
         """Test complete test analysis workflow"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             # Step 1: Analyze existing test files
             test_analysis = analyze_test_files("tests")
             assert 'total_test_files' in test_analysis
@@ -81,7 +88,7 @@ class TestEndToEndWorkflow:
         """Test that configuration integrates properly with all components"""
         config = MCPServerConfig()
         
-        with patch('main.config', config):
+        with patch('redis_test_mcp_tools.config.config', config):
             with patch('main.config.project_root', temp_project_dir):
                 # Test that config affects file operations
                 python_files = find_python_files()
@@ -107,7 +114,7 @@ class TestCrossModuleIntegration:
     
     def test_ast_and_file_operations_integration(self, temp_python_file):
         """Test integration between AST parsing and file operations"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             # First, read the file content
             file_content = read_file_content(temp_python_file.name)
             assert 'content' in file_content
@@ -131,7 +138,7 @@ class TestCrossModuleIntegration:
         config = MCPServerConfig()
         
         with patch('config.config', config):
-            with patch('config.config.project_root', temp_project_dir):
+            with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
                 # Test that project info respects config
                 project_info = get_project_info()
                 assert project_info['configuration']['debug'] == config.debug
@@ -149,7 +156,7 @@ class TestCrossModuleIntegration:
     def test_server_and_functions_integration(self, temp_python_file):
         """Test integration between server tools and underlying functions"""
         # This test would require MCP server to be running, so we'll mock it
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             # Test that functions work independently (as they would be called by server)
             
             # Test parse_module
@@ -169,7 +176,7 @@ class TestErrorHandlingIntegration:
     
     def test_cascading_error_handling(self, temp_project_dir):
         """Test that errors are properly handled across function calls"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             # Test with non-existent file
             result = parse_module_ast("nonexistent.py")
             assert 'error' in result
@@ -212,7 +219,7 @@ class TestErrorHandlingIntegration:
         invalid_config.max_file_size = -1  # Invalid size
         
         with patch('config.config', invalid_config):
-            with patch('config.config.project_root', temp_project_dir):
+            with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
                 # Functions should handle invalid config gracefully
                 python_files = find_python_files()
                 assert isinstance(python_files, list)
@@ -250,7 +257,7 @@ class Class_{j}:
 """
                 file_path.write_text(content)
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             # Test that operations complete in reasonable time
             python_files = find_python_files()
             assert len(python_files) >= 100  # 20 dirs * 5 files each
@@ -261,7 +268,7 @@ class Class_{j}:
     
     def test_concurrent_operations(self, temp_project_dir):
         """Test that operations can be performed concurrently"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             # Simulate concurrent operations (as might happen in server)
             import threading
             results = []
@@ -304,7 +311,7 @@ class TestRealWorldScenarios:
     
     def test_typical_code_exploration_session(self, temp_project_dir):
         """Test a typical code exploration session"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             # 1. User starts by getting project overview
             project_info = get_project_info()
             assert 'main_directories' in project_info
@@ -329,7 +336,7 @@ class TestRealWorldScenarios:
     
     def test_test_generation_workflow(self, temp_project_dir):
         """Test a typical test generation workflow"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             # 1. Analyze existing test coverage
             test_analysis = analyze_test_files()
             initial_test_count = test_analysis['total_test_files']
@@ -378,7 +385,7 @@ class TestBackwardsCompatibility:
     
     def test_output_format_stability(self, temp_python_file):
         """Test that output formats are stable"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             # Test parse_module_ast output format
             result = parse_module_ast(temp_python_file.name)
             required_keys = ['file_path', 'classes', 'functions', 'imports']
@@ -428,14 +435,17 @@ class TestModuleDependencies:
         import pathlib
         
         # Test that all required functions can be imported
-        from main import (
-            parse_module_ast,
+        from redis_test_mcp_tools.tools.ast_tools import parse_module_ast
+        from redis_test_mcp_tools.tools.file_tools import (
             find_python_files,
             read_file_content,
             get_project_info
         )
         
-        from config import MCPServerConfig, config
+        from redis_test_mcp_tools.config import MCPServerConfig, config
+        import sys
+        from pathlib import Path
+        sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
         from run_server import check_dependencies, run_server
     
     def test_optional_dependencies_handling(self):

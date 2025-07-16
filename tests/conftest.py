@@ -13,7 +13,7 @@ from unittest.mock import patch, MagicMock
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from config import MCPServerConfig
+from redis_test_mcp_tools.config import MCPServerConfig
 
 
 @pytest.fixture

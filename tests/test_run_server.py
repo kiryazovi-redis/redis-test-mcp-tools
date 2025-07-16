@@ -14,6 +14,9 @@ from io import StringIO
 # Add the parent directory to the path to import modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 from run_server import (
     check_dependencies,
     run_server,

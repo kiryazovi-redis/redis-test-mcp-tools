@@ -12,7 +12,7 @@ from unittest.mock import patch, MagicMock
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from config import MCPServerConfig, config
+from redis_test_mcp_tools.config import MCPServerConfig, config
 
 
 class TestMCPServerConfig:
@@ -40,8 +40,8 @@ class TestMCPServerConfig:
     
     def test_project_root_calculation(self, mock_config):
         """Test that project root is calculated correctly"""
-        # Should be three levels up from the config file
-        expected_root = Path(__file__).parent.parent.parent.parent
+        # Should be the project root directory (where tests/ and src/ are located)
+        expected_root = Path(__file__).parent.parent
         assert mock_config.project_root == expected_root
     
     @patch.dict(os.environ, {'MCP_DEBUG': 'true'})

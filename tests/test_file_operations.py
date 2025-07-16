@@ -12,14 +12,16 @@ from unittest.mock import patch, MagicMock
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from main import (
-    find_test_files,
-    get_relative_path,
-    is_ignored_path,
+from redis_test_mcp_tools.tools.file_tools import (
     find_python_files,
     read_file_content,
     get_directory_structure,
-    get_project_info
+    get_project_info,
+    get_relative_path,
+    is_ignored_path
+)
+from redis_test_mcp_tools.tools.test_tools import (
+    find_test_files
 )
 
 
@@ -28,7 +30,7 @@ class TestFindTestFiles:
     
     def test_find_test_files_default_directory(self, temp_project_dir):
         """Test finding test files in default directory"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = find_test_files()
             
             assert len(result) > 0
@@ -41,7 +43,7 @@ class TestFindTestFiles:
         """Test finding test files in specific directory"""
         test_dir = temp_project_dir / "tests"
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = find_test_files(test_dir)
             
             assert len(result) > 0
@@ -54,7 +56,7 @@ class TestFindTestFiles:
         empty_dir = temp_project_dir / "empty"
         empty_dir.mkdir()
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = find_test_files(empty_dir)
             
             assert len(result) == 0
@@ -63,7 +65,7 @@ class TestFindTestFiles:
         """Test finding test files in non-existent directory"""
         nonexistent_dir = temp_project_dir / "nonexistent"
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = find_test_files(nonexistent_dir)
             
             assert len(result) == 0
@@ -76,7 +78,7 @@ class TestGetRelativePath:
         """Test getting relative path for normal file"""
         test_file = temp_project_dir / "src" / "module.py"
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = get_relative_path(test_file)
             
             assert result == "src/module.py"
@@ -85,7 +87,7 @@ class TestGetRelativePath:
         """Test getting relative path for file in root"""
         test_file = temp_project_dir / "README.md"
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = get_relative_path(test_file)
             
             assert result == "README.md"
@@ -94,7 +96,7 @@ class TestGetRelativePath:
         """Test getting relative path for file outside project"""
         outside_file = Path("/tmp/outside.py")
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = get_relative_path(outside_file)
             
             # Should return the absolute path as string
@@ -135,7 +137,7 @@ class TestFindPythonFiles:
     
     def test_find_python_files_default_directory(self, temp_project_dir):
         """Test finding Python files in default directory"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = find_python_files()
             
             assert len(result) > 0
@@ -149,7 +151,7 @@ class TestFindPythonFiles:
         """Test finding Python files in specific directory"""
         src_dir = temp_project_dir / "src"
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = find_python_files(src_dir)
             
             assert len(result) > 0
@@ -161,7 +163,7 @@ class TestFindPythonFiles:
     
     def test_find_python_files_structure(self, temp_project_dir):
         """Test the structure of Python file information"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = find_python_files()
             
             for file_info in result:
@@ -177,7 +179,7 @@ class TestFindPythonFiles:
         pycache_dir = temp_project_dir / "__pycache__"
         pycache_file = pycache_dir / "module.pyc"
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = find_python_files()
             
             file_paths = [f['path'] for f in result]
@@ -188,7 +190,7 @@ class TestFindPythonFiles:
         empty_dir = temp_project_dir / "empty"
         empty_dir.mkdir()
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = find_python_files(empty_dir)
             
             assert len(result) == 0
@@ -201,7 +203,7 @@ class TestReadFileContent:
         """Test reading a Python file"""
         python_file = temp_project_dir / "src" / "module.py"
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = read_file_content("src/module.py")
             
             assert 'error' not in result
@@ -218,7 +220,7 @@ class TestReadFileContent:
     
     def test_read_text_file(self, temp_project_dir):
         """Test reading a text file"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = read_file_content("README.md")
             
             assert 'error' not in result
@@ -228,7 +230,7 @@ class TestReadFileContent:
     
     def test_read_nonexistent_file(self, temp_project_dir):
         """Test reading a non-existent file"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = read_file_content("nonexistent.py")
             
             assert 'error' in result
@@ -241,7 +243,7 @@ class TestReadFileContent:
         content = "# This is a test file\n" * 1000
         large_file.write_text(content)
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = read_file_content("large.py", max_size=100)
             
             assert 'error' not in result
@@ -250,7 +252,7 @@ class TestReadFileContent:
     
     def test_read_file_ignored_file(self, temp_project_dir):
         """Test reading an ignored file"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = read_file_content(".DS_Store")
             
             assert 'error' in result
@@ -258,7 +260,7 @@ class TestReadFileContent:
     
     def test_read_file_permission_error(self, temp_project_dir):
         """Test handling of permission errors"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             with patch('builtins.open', side_effect=PermissionError("Permission denied")):
                 result = read_file_content("src/module.py")
                 
@@ -271,7 +273,7 @@ class TestGetDirectoryStructure:
     
     def test_get_directory_structure_default(self, temp_project_dir):
         """Test getting directory structure for default directory"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = get_directory_structure()
             
             assert result is not None
@@ -290,7 +292,7 @@ class TestGetDirectoryStructure:
         """Test getting directory structure for specific directory"""
         src_dir = temp_project_dir / "src"
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = get_directory_structure(src_dir)
             
             assert result is not None
@@ -305,7 +307,7 @@ class TestGetDirectoryStructure:
     
     def test_get_directory_structure_with_max_depth(self, temp_project_dir):
         """Test getting directory structure with max depth"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = get_directory_structure(max_depth=1)
             
             assert result is not None
@@ -323,7 +325,7 @@ class TestGetDirectoryStructure:
     
     def test_get_directory_structure_ignores_hidden(self, temp_project_dir):
         """Test that directory structure ignores hidden directories"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = get_directory_structure()
             
             # Check that ignored directories are not included
@@ -335,14 +337,14 @@ class TestGetDirectoryStructure:
         """Test getting directory structure for non-existent directory"""
         nonexistent_dir = temp_project_dir / "nonexistent"
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = get_directory_structure(nonexistent_dir)
             
             assert result is None
     
     def test_get_directory_structure_file_info(self, temp_project_dir):
         """Test that file information is correctly included"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = get_directory_structure()
             
             # Find a file in the structure
@@ -369,7 +371,7 @@ class TestGetProjectInfo:
     
     def test_get_project_info_structure(self, temp_project_dir):
         """Test that get_project_info returns expected structure"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = get_project_info()
             
             required_keys = [
@@ -383,7 +385,7 @@ class TestGetProjectInfo:
     
     def test_get_project_info_file_counts(self, temp_project_dir):
         """Test that file counts are correctly calculated"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = get_project_info()
             
             file_counts = result['file_counts']
@@ -399,7 +401,7 @@ class TestGetProjectInfo:
     
     def test_get_project_info_main_directories(self, temp_project_dir):
         """Test that main directories are correctly identified"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = get_project_info()
             
             main_dirs = result['main_directories']
@@ -414,7 +416,7 @@ class TestGetProjectInfo:
     
     def test_get_project_info_python_files(self, temp_project_dir):
         """Test that Python files are correctly counted"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = get_project_info()
             
             python_files = result['python_files']
@@ -429,7 +431,7 @@ class TestGetProjectInfo:
     
     def test_get_project_info_test_files(self, temp_project_dir):
         """Test that test files are correctly identified"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = get_project_info()
             
             test_files = result['test_files']
@@ -442,7 +444,7 @@ class TestGetProjectInfo:
     
     def test_get_project_info_configuration(self, temp_project_dir):
         """Test that configuration information is included"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = get_project_info()
             
             config_info = result['configuration']
@@ -453,7 +455,7 @@ class TestGetProjectInfo:
     
     def test_get_project_info_total_lines(self, temp_project_dir):
         """Test that total lines are calculated"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = get_project_info()
             
             total_lines = result['total_lines']
@@ -470,7 +472,7 @@ class TestFileOperationsEdgeCases:
         unicode_content = "# -*- coding: utf-8 -*-\n# Unicode: café, naïve, résumé 🐍\nprint('Hello, 世界')"
         unicode_file.write_text(unicode_content, encoding='utf-8')
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = read_file_content("unicode.py")
             
             assert 'error' not in result
@@ -485,7 +487,7 @@ class TestFileOperationsEdgeCases:
         large_content = "# " + "x" * (1024 * 1024 + 1000)  # Slightly over 1MB
         large_file.write_text(large_content)
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = read_file_content("large.py")
             
             assert 'error' not in result
@@ -498,7 +500,7 @@ class TestFileOperationsEdgeCases:
         binary_content = b'\x00\x01\x02\x03\xFF\xFE\xFD'
         binary_file.write_bytes(binary_content)
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = read_file_content("binary.bin")
             
             # Should handle binary files gracefully
@@ -515,7 +517,7 @@ class TestFileOperationsEdgeCases:
         symlink_file = temp_project_dir / "symlink.py"
         symlink_file.symlink_to(target_file)
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = read_file_content("symlink.py")
             
             assert 'error' not in result

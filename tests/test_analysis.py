@@ -12,7 +12,7 @@ from unittest.mock import patch, MagicMock, mock_open
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from main import (
+from redis_test_mcp_tools.tools.test_tools import (
     analyze_test_files,
     get_test_patterns,
     find_untested_code,
@@ -26,7 +26,7 @@ class TestAnalyzeTestFiles:
     
     def test_analyze_test_files_with_directory(self, temp_project_dir):
         """Test analyzing test files in a directory"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = analyze_test_files("tests")
             
             assert 'error' not in result
@@ -49,7 +49,7 @@ class TestAnalyzeTestFiles:
     
     def test_analyze_test_files_default_directory(self, temp_project_dir):
         """Test analyzing test files in default directory"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = analyze_test_files()
             
             assert 'error' not in result
@@ -57,7 +57,7 @@ class TestAnalyzeTestFiles:
     
     def test_analyze_test_files_nonexistent_directory(self, temp_project_dir):
         """Test analyzing test files in non-existent directory"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = analyze_test_files("nonexistent")
             
             assert 'error' in result
@@ -65,7 +65,7 @@ class TestAnalyzeTestFiles:
     
     def test_analyze_test_files_structure(self, temp_project_dir, temp_test_file):
         """Test the structure of test analysis results"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = analyze_test_files("tests")
             
             # Check test functions structure
@@ -89,7 +89,7 @@ class TestAnalyzeTestFiles:
     
     def test_analyze_test_files_frameworks_detection(self, temp_project_dir, temp_test_file):
         """Test detection of testing frameworks"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = analyze_test_files("tests")
             
             # Check that test functions have framework detection
@@ -99,7 +99,7 @@ class TestAnalyzeTestFiles:
     
     def test_analyze_test_files_fixtures_detection(self, temp_project_dir, temp_test_file):
         """Test detection of test fixtures"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = analyze_test_files("tests")
             
             fixtures = result['fixtures']
@@ -111,7 +111,7 @@ class TestAnalyzeTestFiles:
     
     def test_analyze_test_files_mocking_detection(self, temp_project_dir, temp_test_file):
         """Test detection of mocking usage"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = analyze_test_files("tests")
             
             mocking = result['mock_usage']
@@ -124,7 +124,7 @@ class TestAnalyzeTestFiles:
     
     def test_analyze_test_files_parametrized_tests(self, temp_project_dir, temp_test_file):
         """Test detection of parametrized tests"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = analyze_test_files("tests")
             
             # Check test functions for parametrized decorators
@@ -144,7 +144,7 @@ class TestGetTestPatterns:
     
     def test_get_test_patterns_basic(self, temp_project_dir):
         """Test basic test patterns analysis"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = get_test_patterns("tests")
             
             assert 'error' not in result
@@ -158,7 +158,7 @@ class TestGetTestPatterns:
     
     def test_get_test_patterns_frameworks(self, temp_project_dir):
         """Test framework detection in test patterns"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = get_test_patterns("tests")
             
             frameworks = result['testing_frameworks']
@@ -167,7 +167,7 @@ class TestGetTestPatterns:
     
     def test_get_test_patterns_fixtures(self, temp_project_dir):
         """Test fixture patterns detection"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = get_test_patterns("tests")
             
             fixtures = result['common_fixtures']
@@ -183,7 +183,7 @@ class TestGetTestPatterns:
     
     def test_get_test_patterns_mocking(self, temp_project_dir):
         """Test mocking patterns detection"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = get_test_patterns("tests")
             
             mocking = result['mocking_patterns']
@@ -194,7 +194,7 @@ class TestGetTestPatterns:
     
     def test_get_test_patterns_parametrization(self, temp_project_dir):
         """Test parametrization patterns detection"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = get_test_patterns("tests")
             
             parametrization = result['parametrization_patterns']
@@ -205,7 +205,7 @@ class TestGetTestPatterns:
     
     def test_get_test_patterns_assertions(self, temp_project_dir):
         """Test assertion patterns detection"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = get_test_patterns("tests")
             
             assertions = result['assertion_patterns']
@@ -218,7 +218,7 @@ class TestGetTestPatterns:
     
     def test_get_test_patterns_organization(self, temp_project_dir):
         """Test test organization patterns"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = get_test_patterns("tests")
             
             # Check framework usage organization
@@ -230,7 +230,7 @@ class TestGetTestPatterns:
     
     def test_get_test_patterns_nonexistent_directory(self, temp_project_dir):
         """Test test patterns for non-existent directory"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = get_test_patterns("nonexistent")
             
             assert 'error' in result
@@ -242,7 +242,7 @@ class TestFindUntestedCode:
     
     def test_find_untested_code_basic(self, temp_project_dir):
         """Test basic untested code detection"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = find_untested_code("src", "tests")
             
             assert 'error' not in result
@@ -253,7 +253,7 @@ class TestFindUntestedCode:
     
     def test_find_untested_code_summary(self, temp_project_dir):
         """Test analysis summary structure"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = find_untested_code("src", "tests")
             
             summary = result['analysis_summary']
@@ -267,7 +267,7 @@ class TestFindUntestedCode:
     
     def test_find_untested_code_untested_functions(self, temp_project_dir):
         """Test untested functions detection"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = find_untested_code("src", "tests")
             
             untested_functions = result['untested_functions']
@@ -283,7 +283,7 @@ class TestFindUntestedCode:
     
     def test_find_untested_code_untested_classes(self, temp_project_dir):
         """Test untested classes detection"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = find_untested_code("src", "tests")
             
             untested_classes = result['untested_classes']
@@ -298,7 +298,7 @@ class TestFindUntestedCode:
     
     def test_find_untested_code_suggestions(self, temp_project_dir):
         """Test test coverage analysis"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = find_untested_code("src", "tests")
             
             # Test that basic analysis structure is present
@@ -309,7 +309,7 @@ class TestFindUntestedCode:
     
     def test_find_untested_code_default_directories(self, temp_project_dir):
         """Test with default directories"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = find_untested_code()
             
             assert 'error' not in result
@@ -317,7 +317,7 @@ class TestFindUntestedCode:
     
     def test_find_untested_code_nonexistent_directories(self, temp_project_dir):
         """Test with non-existent directories"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = find_untested_code("nonexistent_src", "nonexistent_tests")
             
             assert 'error' in result
@@ -329,7 +329,7 @@ class TestSuggestTestCases:
     
     def test_suggest_test_cases_file_only(self, temp_python_file):
         """Test suggesting test cases for entire file"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = suggest_test_cases(temp_python_file.name)
             
             assert 'error' not in result
@@ -342,7 +342,7 @@ class TestSuggestTestCases:
     
     def test_suggest_test_cases_specific_function(self, temp_python_file):
         """Test suggesting test cases for specific function"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = suggest_test_cases(temp_python_file.name, function_name="simple_function")
             
             assert 'error' not in result
@@ -359,7 +359,7 @@ class TestSuggestTestCases:
     
     def test_suggest_test_cases_specific_class(self, temp_python_file):
         """Test suggesting test cases for specific class"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = suggest_test_cases(temp_python_file.name, class_name="SampleClass")
             
             assert 'error' not in result
@@ -375,7 +375,7 @@ class TestSuggestTestCases:
     
     def test_suggest_test_cases_with_framework(self, temp_python_file):
         """Test suggesting test cases with specific framework"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = suggest_test_cases(temp_python_file.name, framework="pytest")
             
             assert 'error' not in result
@@ -391,7 +391,7 @@ class TestSuggestTestCases:
     
     def test_suggest_test_cases_unittest_framework(self, temp_python_file):
         """Test suggesting test cases with unittest framework"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = suggest_test_cases(temp_python_file.name, framework="unittest")
             
             assert 'error' not in result
@@ -407,7 +407,7 @@ class TestSuggestTestCases:
     
     def test_suggest_test_cases_suggestion_types(self, temp_python_file):
         """Test different types of test suggestions"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = suggest_test_cases(temp_python_file.name)
             
             # Check that we have different types of suggestions
@@ -421,7 +421,7 @@ class TestSuggestTestCases:
     
     def test_suggest_test_cases_nonexistent_file(self, temp_project_dir):
         """Test suggesting test cases for non-existent file"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = suggest_test_cases("nonexistent.py")
             
             assert 'error' in result
@@ -429,7 +429,7 @@ class TestSuggestTestCases:
     
     def test_suggest_test_cases_nonexistent_function(self, temp_python_file):
         """Test suggesting test cases for non-existent function"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = suggest_test_cases(temp_python_file.name, function_name="nonexistent_function")
             
             assert 'error' in result
@@ -437,7 +437,7 @@ class TestSuggestTestCases:
     
     def test_suggest_test_cases_nonexistent_class(self, temp_python_file):
         """Test suggesting test cases for non-existent class"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = suggest_test_cases(temp_python_file.name, class_name="NonexistentClass")
             
             assert 'error' in result
@@ -445,7 +445,7 @@ class TestSuggestTestCases:
     
     def test_suggest_test_cases_analysis_summary(self, temp_python_file):
         """Test basic structure of test suggestions"""
-        with patch('config.config.project_root', temp_python_file.parent):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
             result = suggest_test_cases(temp_python_file.name)
             
             assert 'file_path' in result
@@ -467,7 +467,7 @@ class TestGetTestCoverageInfo:
     
     def test_get_test_coverage_info_no_file(self, temp_project_dir):
         """Test getting coverage info when no coverage file exists"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = get_test_coverage_info()
             
             assert 'error' in result
@@ -479,7 +479,7 @@ class TestGetTestCoverageInfo:
         coverage_file = temp_project_dir / ".coverage"
         coverage_file.write_text("mock coverage data")
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             with patch('coverage.Coverage') as mock_coverage:
                 mock_cov = MagicMock()
                 mock_coverage.return_value = mock_cov
@@ -499,7 +499,7 @@ class TestGetTestCoverageInfo:
         custom_file = temp_project_dir / "custom_coverage"
         custom_file.write_text("custom coverage data")
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = get_test_coverage_info(str(custom_file))
             
             # This should error for unsupported format
@@ -511,7 +511,7 @@ class TestGetTestCoverageInfo:
         coverage_file = temp_project_dir / ".coverage"
         coverage_file.write_text("mock coverage data")
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             with patch('coverage.Coverage') as mock_coverage:
                 mock_cov = MagicMock()
                 mock_coverage.return_value = mock_cov
@@ -533,7 +533,7 @@ class TestGetTestCoverageInfo:
         coverage_file = temp_project_dir / ".coverage"
         coverage_file.write_text("mock coverage data")
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             with patch('coverage.Coverage', side_effect=ImportError("No coverage module")):
                 result = get_test_coverage_info()
                 
@@ -545,7 +545,7 @@ class TestGetTestCoverageInfo:
         coverage_file = temp_project_dir / ".coverage"
         coverage_file.write_text("invalid coverage data")
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             with patch('coverage.Coverage') as mock_coverage:
                 mock_cov = MagicMock()
                 mock_coverage.return_value = mock_cov
@@ -565,7 +565,7 @@ class TestAnalysisEdgeCases:
         empty_file = temp_project_dir / "empty.py"
         empty_file.write_text("")
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = suggest_test_cases("empty.py")
             
             assert 'error' not in result
@@ -573,7 +573,7 @@ class TestAnalysisEdgeCases:
     
     def test_analysis_with_syntax_error_files(self, temp_project_dir, invalid_python_file):
         """Test analysis with files containing syntax errors"""
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = suggest_test_cases(invalid_python_file.name)
             
             assert 'error' in result
@@ -585,7 +585,7 @@ class TestAnalysisEdgeCases:
         large_content = ["def func_{}(): pass".format(i) for i in range(1000)]
         large_file.write_text('\n'.join(large_content))
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = suggest_test_cases("large.py")
             
             # This should work with proper syntax
@@ -614,7 +614,7 @@ class ComplexClass:
 """
         complex_file.write_text(complex_content)
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = suggest_test_cases("complex.py")
             
             assert 'error' not in result or 'not found' in result['error']
@@ -626,7 +626,7 @@ class ComplexClass:
             test_file = temp_project_dir / f"test_{i}.py"
             test_file.write_text(f"def test_function_{i}(): pass")
         
-        with patch('config.config.project_root', temp_project_dir):
+        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = analyze_test_files()
             
             assert 'error' not in result
