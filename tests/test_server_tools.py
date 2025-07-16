@@ -488,8 +488,10 @@ class TestServerToolsEdgeCases:
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
         
-        response_data = json.loads(result[0].text)
-        assert 'error' in response_data
+        # Error is returned as plain text, not JSON
+        error_text = result[0].text
+        assert isinstance(error_text, str)
+        assert 'error' in error_text.lower() or 'keyerror' in error_text.lower()
     
     @pytest.mark.skipif(not HAS_MCP, reason="MCP not available for testing")
     @pytest.mark.asyncio

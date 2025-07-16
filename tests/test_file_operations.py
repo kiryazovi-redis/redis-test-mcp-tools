@@ -256,7 +256,7 @@ class TestReadFileContent:
             result = read_file_content(".DS_Store")
             
             assert 'error' in result
-            assert 'ignored' in result['error'].lower() or 'not found' in result['error'].lower()
+            assert 'ignored' in result['error'].lower()
     
     def test_read_file_permission_error(self, temp_project_dir):
         """Test handling of permission errors"""
@@ -340,7 +340,10 @@ class TestGetDirectoryStructure:
         with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
             result = get_directory_structure(nonexistent_dir)
             
-            assert result is None
+            # Should return error dict for non-existent directory
+            assert isinstance(result, dict)
+            assert 'error' in result
+            assert 'not found' in result['error'].lower()
     
     def test_get_directory_structure_file_info(self, temp_project_dir):
         """Test that file information is correctly included"""

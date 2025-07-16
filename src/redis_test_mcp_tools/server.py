@@ -310,13 +310,13 @@ async def handle_call_tool(name: str, arguments: Dict[str, Any]) -> List[TextCon
             file_path = arguments["file_path"]
             max_size = arguments.get("max_size", config.max_file_size)
             content = read_file_content(file_path, max_size)
-            return [TextContent(type="text", text=content)]
+            return [TextContent(type="text", text=json.dumps(content, indent=2))]
             
         elif name == "get_directory_structure":
             directory = arguments.get("directory")
             max_depth = arguments.get("max_depth", config.max_directory_depth)
             structure = get_directory_structure(directory, max_depth)
-            return [TextContent(type="text", text=structure)]
+            return [TextContent(type="text", text=json.dumps(structure, indent=2))]
             
         elif name == "get_project_info":
             info = get_project_info()

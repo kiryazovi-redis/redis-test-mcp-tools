@@ -1,0 +1,386 @@
+Metadata-Version: 2.4
+Name: redis-test-mcp-tools
+Version: 0.1.0
+Summary: MCP Server for Redis-py Test Infrastructure Analysis
+Author-email: Redis-py Test Infrastructure <redis-py@example.com>
+License: MIT
+Project-URL: Homepage, https://github.com/redis/redis-py
+Project-URL: Bug Reports, https://github.com/redis/redis-py/issues
+Project-URL: Source, https://github.com/redis/redis-py
+Project-URL: Documentation, https://redis-py.readthedocs.io/
+Keywords: mcp,redis,testing,infrastructure,analysis
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Software Development :: Testing
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: mcp>=1.0.0
+Requires-Dist: asyncio-mqtt>=0.11.0
+Requires-Dist: pydantic>=2.0.0
+Requires-Dist: typing-extensions>=4.0.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.21.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.0.0; extra == "dev"
+Requires-Dist: pytest-mock>=3.10.0; extra == "dev"
+Requires-Dist: coverage>=7.0.0; extra == "dev"
+Provides-Extra: fast
+Requires-Dist: uvloop>=0.17.0; extra == "fast"
+Requires-Dist: orjson>=3.8.0; extra == "fast"
+Dynamic: license-file
+
+# Redis Test MCP Tools
+
+A Model Context Protocol (MCP) server that provides comprehensive tools for analyzing and testing Redis-py project infrastructure. This server offers 14 specialized tools organized into three categories: file operations, AST parsing, and test analysis.
+
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![MCP Compatible](https://img.shields.io/badge/MCP-compatible-green.svg)](https://modelcontextprotocol.io/)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+## Features
+
+- **File System Analysis**: Navigate and explore Python projects with intelligent file discovery
+- **AST-based Code Analysis**: Deep code structure analysis using Python's Abstract Syntax Tree
+- **Test Infrastructure Tools**: Comprehensive test analysis, coverage reporting, and test case generation
+- **Redis-py Focused**: Specialized tools designed for Redis-py project workflows
+- **MCP Integration**: Seamless integration with MCP-compatible AI assistants and tools
+
+## Installation
+
+### Prerequisites
+
+- Python 3.10 or higher
+- pip (Python package installer)
+
+### Install from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/redis/redis-py.git
+cd redis-test-mcp-tools
+
+# Create virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install in development mode
+pip install -e .
+
+# Or install with development dependencies
+pip install -e .[dev]
+```
+
+## Quick Start
+
+### Command Line Usage
+
+```bash
+# Start the MCP server
+redis-test-mcp
+
+# With debug logging
+redis-test-mcp --debug
+
+# Custom configuration
+redis-test-mcp --max-file-size 2048000 --max-depth 5
+```
+
+### MCP Client Integration
+
+Add to your MCP client configuration:
+
+```json
+{
+  "servers": {
+    "redis-test-mcp": {
+      "command": "redis-test-mcp",
+      "args": ["--debug"]
+    }
+  }
+}
+```
+
+## Available Tools
+
+The server provides 14 specialized tools organized into three main categories:
+
+### 📁 File System Tools (4 tools)
+
+#### `find_python_files`
+List all Python files in the project with metadata.
+
+**Parameters:**
+- `directory` (optional): Directory to search in (relative to project root)
+
+**Example:**
+```json
+{"directory": "redis/"}
+```
+
+#### `read_file`
+Read the contents of a file with size limits.
+
+**Parameters:**
+- `file_path` (required): Path to the file to read
+- `max_size` (optional): Maximum file size in bytes (default: 1MB)
+
+**Example:**
+```json
+{"file_path": "redis/client.py", "max_size": 2048000}
+```
+
+#### `get_directory_structure`
+Show the directory structure of the project as a tree.
+
+**Parameters:**
+- `directory` (optional): Directory to show structure for
+- `max_depth` (optional): Maximum depth to traverse (default: 3)
+
+**Example:**
+```json
+{"directory": "tests/", "max_depth": 2}
+```
+
+#### `get_project_info`
+Get comprehensive information about the project including structure, dependencies, and metadata.
+
+**Parameters:**
+- `random_string` (required): Dummy parameter for no-parameter tools
+
+### 🔍 AST Parsing Tools (5 tools)
+
+#### `parse_module`
+Parse a Python file and return classes, functions, and their signatures.
+
+**Parameters:**
+- `file_path` (required): Path to the Python file to parse
+
+**Example:**
+```json
+{"file_path": "redis/connection.py"}
+```
+
+#### `get_function_details`
+Get detailed information about a specific function including parameters, return type, and docstring.
+
+**Parameters:**
+- `file_path` (required): Path to the Python file
+- `function_name` (required): Name of the function to analyze
+
+**Example:**
+```json
+{"file_path": "redis/client.py", "function_name": "execute_command"}
+```
+
+#### `get_class_details`
+Get class methods, properties, and inheritance information.
+
+**Parameters:**
+- `file_path` (required): Path to the Python file
+- `class_name` (required): Name of the class to analyze
+
+**Example:**
+```json
+{"file_path": "redis/client.py", "class_name": "Redis"}
+```
+
+#### `find_imports`
+Show what modules and packages a file imports.
+
+**Parameters:**
+- `file_path` (required): Path to the Python file to analyze
+
+**Example:**
+```json
+{"file_path": "redis/__init__.py"}
+```
+
+#### `get_type_hints`
+Extract type annotations from functions and methods in a Python file.
+
+**Parameters:**
+- `file_path` (required): Path to the Python file
+
+**Example:**
+```json
+{"file_path": "redis/typing.py"}
+```
+
+### 🧪 Test Analysis Tools (5 tools)
+
+#### `analyze_test_files`
+Find and parse existing test files, showing test structure including fixtures, markers, and test functions.
+
+**Parameters:**
+- `directory` (optional): Directory to search for test files
+
+**Example:**
+```json
+{"directory": "tests/"}
+```
+
+#### `get_test_patterns`
+Identify common testing patterns used in the project (fixtures, mocks, frameworks, etc.).
+
+**Parameters:**
+- `directory` (optional): Directory to analyze for test patterns
+
+**Example:**
+```json
+{"directory": "tests/test_asyncio/"}
+```
+
+#### `find_untested_code`
+Compare source files with test files to find untested functions and classes.
+
+**Parameters:**
+- `source_dir` (optional): Source directory to analyze
+- `test_dir` (optional): Test directory for comparison (default: 'tests')
+
+**Example:**
+```json
+{"source_dir": "redis/", "test_dir": "tests/"}
+```
+
+#### `suggest_test_cases`
+Generate test case suggestions based on function signatures and docstrings.
+
+**Parameters:**
+- `file_path` (required): Path to the Python file to analyze
+- `function_name` (optional): Specific function to generate suggestions for
+- `class_name` (optional): Specific class to generate suggestions for
+- `framework` (optional): Testing framework ('pytest' or 'unittest')
+
+**Example:**
+```json
+{
+  "file_path": "redis/connection.py", 
+  "function_name": "connect",
+  "framework": "pytest"
+}
+```
+
+#### `get_test_coverage_info`
+Parse and show coverage information from pytest-cov data.
+
+**Parameters:**
+- `coverage_file` (optional): Path to coverage file (searches common locations if not specified)
+
+**Example:**
+```json
+{"coverage_file": ".coverage"}
+```
+
+## Configuration
+
+The server can be configured through command-line arguments:
+
+```bash
+redis-test-mcp [OPTIONS]
+
+Options:
+  --debug                 Enable debug logging
+  --max-file-size INT     Maximum file size to read in bytes (default: 1MB)
+  --max-depth INT         Maximum directory depth to traverse (default: 3)
+  --help                  Show help message
+```
+
+## Development
+
+### Setup Development Environment
+
+```bash
+# Clone and setup
+git clone https://github.com/redis/redis-py.git
+cd redis-test-mcp-tools
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate
+
+# Install in development mode with all dependencies
+pip install -e .[dev]
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=redis_test_mcp_tools
+
+# Run specific test categories
+pytest -m unit
+pytest -m integration
+```
+
+### Code Quality
+
+```bash
+# Format code
+black src/ tests/
+
+# Sort imports
+isort src/ tests/
+
+# Type checking
+mypy src/
+```
+
+## Project Structure
+
+```
+redis-test-mcp-tools/
+├── src/
+│   └── redis_test_mcp_tools/
+│       ├── main.py              # Entry point
+│       ├── server.py            # MCP server implementation
+│       ├── config.py            # Configuration management
+│       └── tools/               # Tool implementations
+│           ├── ast_tools.py     # AST parsing tools
+│           ├── file_tools.py    # File system tools
+│           └── test_tools.py    # Test analysis tools
+├── tests/                       # Test suite
+├── docs/                        # Documentation
+├── examples/                    # Usage examples
+└── pyproject.toml              # Project configuration
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Add tests for new functionality
+5. Ensure all tests pass (`pytest`)
+6. Commit your changes (`git commit -m 'Add amazing feature'`)
+7. Push to the branch (`git push origin feature/amazing-feature`)
+8. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Related Projects
+
+- [Redis-py](https://github.com/redis/redis-py) - The Redis Python client
+- [Model Context Protocol](https://modelcontextprotocol.io/) - Protocol for AI assistant integrations
+
+## Support
+
+- 📖 [Documentation](docs/)
+- 🐛 [Issue Tracker](https://github.com/redis/redis-py/issues)
+- 💬 [Discussions](https://github.com/redis/redis-py/discussions)
+
+---
+
+**Made with ❤️ for the Redis-py community**

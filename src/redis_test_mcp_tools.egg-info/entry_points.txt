@@ -1,0 +1,2 @@
+[console_scripts]
+redis-test-mcp = redis_test_mcp_tools.main:main

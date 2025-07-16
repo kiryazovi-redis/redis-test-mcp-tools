@@ -38,13 +38,13 @@ def run_server(debug=False, max_file_size=None, max_depth=None, test_mode=False)
             return 1
     
     # Check main script exists only when not in test mode
-    main_script = script_dir / "main.py"
+    main_script = script_dir.parent / "src" / "redis_test_mcp_tools" / "main.py"
     if not main_script.exists():
         print(f"✗ Main script not found: {main_script}")
         return 1
     
     # Prepare command
-    cmd = [sys.executable, str(main_script)]
+    cmd = [sys.executable, "-m", "redis_test_mcp_tools.main"]
     
     if debug:
         cmd.append("--debug")

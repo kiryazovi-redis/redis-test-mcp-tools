@@ -68,9 +68,9 @@ class TestRunServer:
             assert result == 0
             mock_run.assert_called_once()
             
-            # Check that the command includes the main script
+            # Check that the command includes the main module
             call_args = mock_run.call_args[0][0]
-            assert any('main.py' in str(arg) for arg in call_args)
+            assert any('redis_test_mcp_tools.main' in str(arg) for arg in call_args)
     
     def test_run_server_with_debug(self):
         """Test server run with debug flag"""
@@ -571,10 +571,11 @@ class TestRunServerEdgeCases:
             run_server()
             
             call_args = mock_run.call_args[0][0]
-            # Check that the path is properly resolved
-            assert len(call_args) >= 2
+            # Check that the command is properly formed
+            assert len(call_args) >= 3
             assert call_args[0] == sys.executable
-            assert call_args[1].endswith('main.py')
+            assert call_args[1] == '-m'
+            assert call_args[2] == 'redis_test_mcp_tools.main'
     
     def test_run_server_environment_preservation(self):
         """Test that run_server preserves environment variables"""
