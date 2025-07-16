@@ -17,6 +17,93 @@ from .file_tools import find_test_files, get_relative_path, is_ignored_path
 from .ast_tools import get_ast_from_file, extract_class_info, extract_function_info, find_imports_in_file, parse_module_ast
 
 
+def _detect_framework_context(file_path: str, node: ast.FunctionDef, func_info: Dict[str, Any], file_imports: List[Dict[str, Any]]) -> str:
+    """Intelligently detect the testing framework for a test function."""
+    
+    # Check if function is inside a unittest.TestCase class
+    # We need to find the parent class in the AST
+    current_file_tree = get_ast_from_file(file_path)
+    if not isinstance(current_file_tree, dict):  # No error
+        for class_node in ast.walk(current_file_tree):
+            if isinstance(class_node, ast.ClassDef):
+                # Check if this function is a method of this class
+                for method_node in class_node.body:
+                    if (isinstance(method_node, (ast.FunctionDef, ast.AsyncFunctionDef)) and 
+                        method_node.name == node.name and method_node.lineno == node.lineno):
+                        
+                        # Check if class inherits from unittest.TestCase
+                        is_unittest_class = False
+                        for base in class_node.bases:
+                            base_name = ast.unparse(base) if hasattr(ast, 'unparse') else str(base)
+                            if 'TestCase' in base_name or 'unittest' in base_name:
+                                is_unittest_class = True
+                                break
+                        
+                        if is_unittest_class:
+                            return 'unittest'
+                        else:
+                            # This is a class method but not unittest.TestCase
+                            # Check if it's a pytest-style test class
+                            if class_node.name.startswith('Test'):
+                                # Likely pytest test class, check imports to confirm
+                                pytest_imports = any('pytest' in imp.get('module', '').lower() 
+                                                   for imp in file_imports)
+                                if pytest_imports:
+                                    return 'pytest'
+                            break
+    
+    # Check file imports for framework indicators
+    pytest_indicators = 0
+    unittest_indicators = 0
+    
+    for import_info in file_imports:
+        module = import_info.get('module', '').lower()
+        name = import_info.get('name', '').lower()
+        
+        if 'pytest' in module or 'pytest' in name:
+            pytest_indicators += 1
+        elif 'unittest' in module or 'unittest' in name:
+            unittest_indicators += 1
+        elif module == 'mock' or name == 'mock':
+            # Mock can be used with both, but unittest.mock is more common in unittest
+            if 'unittest' in module:
+                unittest_indicators += 1
+    
+    # Check decorators for pytest-specific patterns
+    for decorator in func_info['decorators']:
+        if any(pattern in decorator.lower() for pattern in ['pytest.', 'parametrize', 'fixture', 'mark.']):
+            return 'pytest'
+        elif any(pattern in decorator.lower() for pattern in ['unittest.', 'mock.patch']):
+            unittest_indicators += 1
+    
+    # Check function parameters for pytest fixture patterns
+    for param in func_info['parameters']:
+        param_name = param['name']
+        # Common pytest fixture names
+        if param_name in ['request', 'tmp_path', 'tmpdir', 'capfd', 'capsys', 'monkeypatch']:
+            return 'pytest'
+        # unittest-style self parameter
+        elif param_name == 'self' and func_info['parameters'][0]['name'] == 'self':
+            return 'unittest'
+    
+    # Check function name patterns
+    func_name = node.name
+    if func_name in ['setUp', 'tearDown', 'setUpClass', 'tearDownClass']:
+        return 'unittest'
+    elif func_name.startswith('test_') and len(func_info['parameters']) > 1:
+        # pytest tests often have fixture parameters
+        return 'pytest'
+    
+    # Use import indicators to determine default
+    if pytest_indicators > unittest_indicators:
+        return 'pytest'
+    elif unittest_indicators > pytest_indicators:
+        return 'unittest'
+    
+    # If still unclear, default to pytest (modern preference)
+    return 'pytest'
+
+
 def analyze_test_files(directory: Optional[str] = None) -> Dict[str, Any]:
     """Analyze test files and extract test structure including unittest and pytest patterns."""
     if directory:
@@ -61,6 +148,10 @@ def analyze_test_files(directory: Optional[str] = None) -> Dict[str, Any]:
             'assertion_patterns': [],
             'mock_usage': []
         }
+        
+        # Get file imports early for framework detection
+        file_imports_result = find_imports_in_file(file_path)
+        file_imports = file_imports_result.get('imports', []) if 'imports' in file_imports_result else []
         
         for node in ast.walk(tree):
             if isinstance(node, ast.ClassDef):
@@ -144,6 +235,9 @@ def analyze_test_files(directory: Optional[str] = None) -> Dict[str, Any]:
                     analysis['pytest_fixtures'].append(fixture_info)
                 
                 if is_test_func:
+                    # Use intelligent framework detection
+                    framework = _detect_framework_context(file_path, node, func_info, file_imports)
+                    
                     test_func_info = {
                         'name': node.name,
                         'file_path': file_path,
@@ -151,7 +245,7 @@ def analyze_test_files(directory: Optional[str] = None) -> Dict[str, Any]:
                         'parameters': func_info['parameters'],
                         'docstring': func_info['docstring'],
                         'decorators': func_info['decorators'],
-                        'framework': 'pytest' if any('pytest' in dec for dec in func_info['decorators']) else 'unittest'
+                        'framework': framework
                     }
                     analysis['test_functions'].append(test_func_info)
             

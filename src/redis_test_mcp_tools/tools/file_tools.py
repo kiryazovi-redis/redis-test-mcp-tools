@@ -13,6 +13,53 @@ from typing import Any, Dict, List, Optional
 from ..config import config
 
 
+def _validate_safe_path(file_path: str) -> str:
+    """
+    Validate and sanitize file path to prevent directory traversal attacks.
+    
+    Args:
+        file_path: The input file path to validate
+        
+    Returns:
+        Sanitized path string
+        
+    Raises:
+        ValueError: If path is unsafe (contains .. or is absolute outside project)
+    """
+    # Convert to string and normalize
+    path_str = str(file_path).strip()
+    
+    # Block obvious directory traversal attempts
+    if '..' in path_str:
+        raise ValueError(f"Path traversal not allowed: {file_path}")
+    
+    # Block absolute paths
+    if path_str.startswith('/') or (len(path_str) > 1 and path_str[1] == ':'):
+        raise ValueError(f"Absolute paths not allowed: {file_path}")
+    
+    # Block null bytes and other dangerous characters
+    dangerous_chars = ['\x00', '\r', '\n']
+    for char in dangerous_chars:
+        if char in path_str:
+            raise ValueError(f"Invalid character in path: {file_path}")
+    
+    # Convert to Path and resolve to ensure it's within project
+    try:
+        candidate_path = config.project_root / path_str
+        resolved_path = candidate_path.resolve()
+        
+        # Ensure the resolved path is within project root
+        try:
+            resolved_path.relative_to(config.project_root.resolve())
+        except ValueError:
+            raise ValueError(f"Path outside project directory: {file_path}")
+            
+        return path_str
+        
+    except (OSError, ValueError) as e:
+        raise ValueError(f"Invalid path: {file_path} - {str(e)}")
+
+
 def find_test_files(directory: Optional[Path] = None) -> List[Dict[str, Any]]:
     """Find all test files in the project."""
     if directory is None:
@@ -87,7 +134,13 @@ def read_file_content(file_path: str, max_size: int = None) -> Dict[str, Any]:
         max_size = config.max_file_size
     
     try:
-        full_path = config.project_root / file_path
+        # Validate path security first
+        try:
+            safe_path = _validate_safe_path(file_path)
+        except ValueError as e:
+            return {'error': f'Invalid path: {str(e)}'}
+            
+        full_path = config.project_root / safe_path
         
         # Check if file should be ignored
         if config.is_ignored_path(full_path):
@@ -135,12 +188,27 @@ def get_directory_structure(directory: Optional[Path] = None, max_depth: int = N
     """Get directory structure as a tree."""
     if directory is None:
         directory = config.project_root
+    else:
+        # If directory is passed as string, validate it for security
+        if isinstance(directory, str):
+            try:
+                safe_path = _validate_safe_path(directory)
+                directory = config.project_root / safe_path
+            except ValueError as e:
+                return {'error': f'Invalid directory path: {str(e)}'}
+        elif isinstance(directory, Path):
+            # Validate that the Path is within project boundaries
+            try:
+                directory.resolve().relative_to(config.project_root.resolve())
+            except ValueError:
+                return {'error': f'Directory outside project: {directory}'}
+    
     if max_depth is None:
         max_depth = config.max_directory_depth
     
     # Check if directory exists
     if not directory.exists():
-        return None
+        return {'error': f'Directory not found: {directory}'}
     
     def build_tree(path: Path, current_depth: int = 0) -> Dict[str, Any]:
         if current_depth > max_depth or is_ignored_path(path):
