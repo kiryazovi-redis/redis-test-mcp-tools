@@ -3,28 +3,31 @@
 Comprehensive unit tests for MCP server tools and handlers in main.py
 """
 
+from redis_test_mcp_tools.server import handle_call_tool, handle_list_tools, server
 import json
-import pytest
-import asyncio
-from pathlib import Path
-from unittest.mock import patch, MagicMock, AsyncMock
 
 # Add the parent directory to the path to import modules
 import sys
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Import MCP types for testing
 try:
     import mcp.types as types
-    from mcp.server import Server
+
     HAS_MCP = True
 except ImportError:
     HAS_MCP = False
-    
+
     # Mock MCP types for testing
     class MockTypes:
         class Tool:
             pass
+
         class TextContent:
             def __init__(self, type, text):
                 self.type = type
@@ -32,60 +35,54 @@ except ImportError:
 
     types = MockTypes()
 
-from redis_test_mcp_tools.server import (
-    server,
-    handle_list_tools,
-    handle_call_tool
-)
-
 
 @pytest.mark.skipif(not HAS_MCP, reason="MCP not available for testing")
 class TestServerTools:
     """Test the MCP server tools functionality"""
-    
+
     @pytest.mark.asyncio
     async def test_handle_list_tools(self):
         """Test the handle_list_tools function"""
         result = await handle_list_tools()
-        
+
         assert isinstance(result, list)
         assert len(result) > 0
-        
+
         # Check that all expected tools are present
         tool_names = [tool.name for tool in result]
         expected_tools = [
-            'parse_module',
-            'get_function_details',
-            'get_class_details',
-            'find_imports',
-            'get_type_hints',
-            'find_python_files',
-            'read_file',
-            'get_directory_structure',
-            'get_project_info',
-            'analyze_test_files',
-            'get_test_patterns',
-            'find_untested_code',
-            'suggest_test_cases',
-            'get_test_coverage_info'
+            "parse_module",
+            "get_function_details",
+            "get_class_details",
+            "find_imports",
+            "get_type_hints",
+            "find_python_files",
+            "read_file",
+            "get_directory_structure",
+            "get_project_info",
+            "analyze_test_files",
+            "get_test_patterns",
+            "find_untested_code",
+            "suggest_test_cases",
+            "get_test_coverage_info",
         ]
-        
+
         for expected_tool in expected_tools:
             assert expected_tool in tool_names
-    
+
     @pytest.mark.asyncio
     async def test_handle_list_tools_structure(self):
         """Test that handle_list_tools returns properly structured tools"""
         result = await handle_list_tools()
-        
+
         for tool in result:
-            assert hasattr(tool, 'name')
-            assert hasattr(tool, 'description')
-            assert hasattr(tool, 'inputSchema')
+            assert hasattr(tool, "name")
+            assert hasattr(tool, "description")
+            assert hasattr(tool, "inputSchema")
             assert isinstance(tool.inputSchema, dict)
-            assert 'type' in tool.inputSchema
-            assert tool.inputSchema['type'] == 'object'
-    
+            assert "type" in tool.inputSchema
+            assert tool.inputSchema["type"] == "object"
+
     def test_server_instance(self):
         """Test that server instance is properly created"""
         assert server is not None
@@ -95,375 +92,408 @@ class TestServerTools:
 @pytest.mark.skipif(not HAS_MCP, reason="MCP not available for testing")
 class TestHandleCallTool:
     """Test the handle_call_tool function"""
-    
+
     @pytest.mark.asyncio
     async def test_handle_call_tool_parse_module(self, temp_python_file):
         """Test calling parse_module tool"""
-        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
-            result = await handle_call_tool("parse_module", {"file_path": temp_python_file.name})
-            
+        with patch(
+            "redis_test_mcp_tools.config.config.project_root", temp_python_file.parent
+        ):
+            result = await handle_call_tool(
+                "parse_module", {"file_path": temp_python_file.name}
+            )
+
             assert isinstance(result, list)
             assert len(result) == 1
             assert isinstance(result[0], types.TextContent)
             assert result[0].type == "text"
-            
+
             # Parse the JSON response
             response_data = json.loads(result[0].text)
-            assert 'file_path' in response_data
-            assert 'classes' in response_data
-            assert 'functions' in response_data
-    
+            assert "file_path" in response_data
+            assert "classes" in response_data
+            assert "functions" in response_data
+
     @pytest.mark.asyncio
     async def test_handle_call_tool_get_function_details(self, temp_python_file):
         """Test calling get_function_details tool"""
-        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
-            result = await handle_call_tool("get_function_details", {
-                "file_path": temp_python_file.name,
-                "function_name": "simple_function"
-            })
-            
+        with patch(
+            "redis_test_mcp_tools.config.config.project_root", temp_python_file.parent
+        ):
+            result = await handle_call_tool(
+                "get_function_details",
+                {
+                    "file_path": temp_python_file.name,
+                    "function_name": "simple_function",
+                },
+            )
+
             assert isinstance(result, list)
             assert len(result) == 1
             assert isinstance(result[0], types.TextContent)
-            
+
             response_data = json.loads(result[0].text)
-            assert 'name' in response_data
-            assert response_data['name'] == "simple_function"
-    
+            assert "name" in response_data
+            assert response_data["name"] == "simple_function"
+
     @pytest.mark.asyncio
     async def test_handle_call_tool_get_class_details(self, temp_python_file):
         """Test calling get_class_details tool"""
-        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
-            result = await handle_call_tool("get_class_details", {
-                "file_path": temp_python_file.name,
-                "class_name": "SampleClass"
-            })
-            
+        with patch(
+            "redis_test_mcp_tools.config.config.project_root", temp_python_file.parent
+        ):
+            result = await handle_call_tool(
+                "get_class_details",
+                {"file_path": temp_python_file.name, "class_name": "SampleClass"},
+            )
+
             assert isinstance(result, list)
             assert len(result) == 1
             assert isinstance(result[0], types.TextContent)
-            
+
             response_data = json.loads(result[0].text)
-            assert 'name' in response_data
-            assert response_data['name'] == "SampleClass"
-    
+            assert "name" in response_data
+            assert response_data["name"] == "SampleClass"
+
     @pytest.mark.asyncio
     async def test_handle_call_tool_find_imports(self, temp_python_file):
         """Test calling find_imports tool"""
-        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
-            result = await handle_call_tool("find_imports", {
-                "file_path": temp_python_file.name
-            })
-            
+        with patch(
+            "redis_test_mcp_tools.config.config.project_root", temp_python_file.parent
+        ):
+            result = await handle_call_tool(
+                "find_imports", {"file_path": temp_python_file.name}
+            )
+
             assert isinstance(result, list)
             assert len(result) == 1
             assert isinstance(result[0], types.TextContent)
-            
+
             response_data = json.loads(result[0].text)
-            assert 'imports' in response_data
-            assert 'total_imports' in response_data
-    
+            assert "imports" in response_data
+            assert "total_imports" in response_data
+
     @pytest.mark.asyncio
     async def test_handle_call_tool_get_type_hints(self, temp_python_file):
         """Test calling get_type_hints tool"""
-        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
-            result = await handle_call_tool("get_type_hints", {
-                "file_path": temp_python_file.name
-            })
-            
+        with patch(
+            "redis_test_mcp_tools.config.config.project_root", temp_python_file.parent
+        ):
+            result = await handle_call_tool(
+                "get_type_hints", {"file_path": temp_python_file.name}
+            )
+
             assert isinstance(result, list)
             assert len(result) == 1
             assert isinstance(result[0], types.TextContent)
-            
+
             response_data = json.loads(result[0].text)
-            assert 'functions' in response_data
-            assert 'classes' in response_data
-    
+            assert "functions" in response_data
+            assert "classes" in response_data
+
     @pytest.mark.asyncio
     async def test_handle_call_tool_find_python_files(self, temp_project_dir):
         """Test calling find_python_files tool"""
-        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
+        with patch("redis_test_mcp_tools.config.config.project_root", temp_project_dir):
             result = await handle_call_tool("find_python_files", {})
-            
+
             assert isinstance(result, list)
             assert len(result) == 1
             assert isinstance(result[0], types.TextContent)
-            
+
             response_data = json.loads(result[0].text)
             assert isinstance(response_data, list)
             assert len(response_data) > 0
-    
+
     @pytest.mark.asyncio
-    async def test_handle_call_tool_find_python_files_with_directory(self, temp_project_dir):
+    async def test_handle_call_tool_find_python_files_with_directory(
+        self, temp_project_dir
+    ):
         """Test calling find_python_files tool with directory"""
-        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
-            result = await handle_call_tool("find_python_files", {
-                "directory": "src"
-            })
-            
+        with patch("redis_test_mcp_tools.config.config.project_root", temp_project_dir):
+            result = await handle_call_tool("find_python_files", {"directory": "src"})
+
             assert isinstance(result, list)
             assert len(result) == 1
             assert isinstance(result[0], types.TextContent)
-            
+
             response_data = json.loads(result[0].text)
             assert isinstance(response_data, list)
-    
+
     @pytest.mark.asyncio
     async def test_handle_call_tool_read_file(self, temp_python_file):
         """Test calling read_file tool"""
-        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
-            result = await handle_call_tool("read_file", {
-                "file_path": temp_python_file.name
-            })
-            
+        with patch(
+            "redis_test_mcp_tools.config.config.project_root", temp_python_file.parent
+        ):
+            result = await handle_call_tool(
+                "read_file", {"file_path": temp_python_file.name}
+            )
+
             assert isinstance(result, list)
             assert len(result) == 1
             assert isinstance(result[0], types.TextContent)
-            
+
             response_data = json.loads(result[0].text)
-            assert 'content' in response_data
-            assert 'size' in response_data
-            assert 'lines' in response_data
-    
+            assert "content" in response_data
+            assert "size" in response_data
+            assert "lines" in response_data
+
     @pytest.mark.asyncio
     async def test_handle_call_tool_read_file_with_max_size(self, temp_python_file):
         """Test calling read_file tool with max_size"""
-        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
-            result = await handle_call_tool("read_file", {
-                "file_path": temp_python_file.name,
-                "max_size": 100
-            })
-            
+        with patch(
+            "redis_test_mcp_tools.config.config.project_root", temp_python_file.parent
+        ):
+            result = await handle_call_tool(
+                "read_file", {"file_path": temp_python_file.name, "max_size": 100}
+            )
+
             assert isinstance(result, list)
             assert len(result) == 1
             assert isinstance(result[0], types.TextContent)
-            
+
             response_data = json.loads(result[0].text)
-            assert 'content' in response_data
-            assert len(response_data['content']) <= 100
-    
+            assert "content" in response_data
+            assert len(response_data["content"]) <= 100
+
     @pytest.mark.asyncio
     async def test_handle_call_tool_get_directory_structure(self, temp_project_dir):
         """Test calling get_directory_structure tool"""
-        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
+        with patch("redis_test_mcp_tools.config.config.project_root", temp_project_dir):
             result = await handle_call_tool("get_directory_structure", {})
-            
+
             assert isinstance(result, list)
             assert len(result) == 1
             assert isinstance(result[0], types.TextContent)
-            
+
             response_data = json.loads(result[0].text)
-            assert 'type' in response_data
-            assert response_data['type'] == 'directory'
-            assert 'children' in response_data
-    
+            assert "type" in response_data
+            assert response_data["type"] == "directory"
+            assert "children" in response_data
+
     @pytest.mark.asyncio
-    async def test_handle_call_tool_get_directory_structure_with_options(self, temp_project_dir):
+    async def test_handle_call_tool_get_directory_structure_with_options(
+        self, temp_project_dir
+    ):
         """Test calling get_directory_structure tool with options"""
-        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
-            result = await handle_call_tool("get_directory_structure", {
-                "directory": "src",
-                "max_depth": 2
-            })
-            
+        with patch("redis_test_mcp_tools.config.config.project_root", temp_project_dir):
+            result = await handle_call_tool(
+                "get_directory_structure", {"directory": "src", "max_depth": 2}
+            )
+
             assert isinstance(result, list)
             assert len(result) == 1
             assert isinstance(result[0], types.TextContent)
-            
+
             response_data = json.loads(result[0].text)
-            assert 'type' in response_data
-            assert response_data['type'] == 'directory'
-    
+            assert "type" in response_data
+            assert response_data["type"] == "directory"
+
     @pytest.mark.asyncio
     async def test_handle_call_tool_get_project_info(self, temp_project_dir):
         """Test calling get_project_info tool"""
-        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
+        with patch("redis_test_mcp_tools.config.config.project_root", temp_project_dir):
             result = await handle_call_tool("get_project_info", {})
-            
+
             assert isinstance(result, list)
             assert len(result) == 1
             assert isinstance(result[0], types.TextContent)
-            
+
             response_data = json.loads(result[0].text)
-            assert 'name' in response_data
-            assert 'version' in response_data
-            assert 'project_root' in response_data
-            assert 'file_counts' in response_data
-    
+            assert "name" in response_data
+            assert "version" in response_data
+            assert "project_root" in response_data
+            assert "file_counts" in response_data
+
     @pytest.mark.asyncio
     async def test_handle_call_tool_analyze_test_files(self, temp_project_dir):
         """Test calling analyze_test_files tool"""
-        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
+        with patch("redis_test_mcp_tools.config.config.project_root", temp_project_dir):
             result = await handle_call_tool("analyze_test_files", {})
-            
+
             assert isinstance(result, list)
             assert len(result) == 1
             assert isinstance(result[0], types.TextContent)
-            
+
             response_data = json.loads(result[0].text)
-            assert 'total_test_files' in response_data
-            assert 'test_classes' in response_data
-            assert 'test_functions' in response_data
-    
+            assert "total_test_files" in response_data
+            assert "test_classes" in response_data
+            assert "test_functions" in response_data
+
     @pytest.mark.asyncio
-    async def test_handle_call_tool_analyze_test_files_with_directory(self, temp_project_dir):
+    async def test_handle_call_tool_analyze_test_files_with_directory(
+        self, temp_project_dir
+    ):
         """Test calling analyze_test_files tool with directory"""
-        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
-            result = await handle_call_tool("analyze_test_files", {
-                "directory": "tests"
-            })
-            
+        with patch("redis_test_mcp_tools.config.config.project_root", temp_project_dir):
+            result = await handle_call_tool(
+                "analyze_test_files", {"directory": "tests"}
+            )
+
             assert isinstance(result, list)
             assert len(result) == 1
             assert isinstance(result[0], types.TextContent)
-            
+
             response_data = json.loads(result[0].text)
-            assert 'total_test_files' in response_data
-    
+            assert "total_test_files" in response_data
+
     @pytest.mark.asyncio
     async def test_handle_call_tool_get_test_patterns(self, temp_project_dir):
         """Test calling get_test_patterns tool"""
-        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
+        with patch("redis_test_mcp_tools.config.config.project_root", temp_project_dir):
             result = await handle_call_tool("get_test_patterns", {})
-            
+
             assert isinstance(result, list)
             assert len(result) == 1
             assert isinstance(result[0], types.TextContent)
-            
+
             response_data = json.loads(result[0].text)
-            assert 'testing_frameworks' in response_data
-            assert 'common_fixtures' in response_data
-    
+            assert "testing_frameworks" in response_data
+            assert "common_fixtures" in response_data
+
     @pytest.mark.asyncio
     async def test_handle_call_tool_find_untested_code(self, temp_project_dir):
         """Test calling find_untested_code tool"""
-        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
+        with patch("redis_test_mcp_tools.config.config.project_root", temp_project_dir):
             result = await handle_call_tool("find_untested_code", {})
-            
+
             assert isinstance(result, list)
             assert len(result) == 1
             assert isinstance(result[0], types.TextContent)
-            
+
             response_data = json.loads(result[0].text)
-            assert 'analysis_summary' in response_data
-            assert 'untested_functions' in response_data
-    
+            assert "analysis_summary" in response_data
+            assert "untested_functions" in response_data
+
     @pytest.mark.asyncio
-    async def test_handle_call_tool_find_untested_code_with_directories(self, temp_project_dir):
+    async def test_handle_call_tool_find_untested_code_with_directories(
+        self, temp_project_dir
+    ):
         """Test calling find_untested_code tool with directories"""
-        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
-            result = await handle_call_tool("find_untested_code", {
-                "source_dir": "src",
-                "test_dir": "tests"
-            })
-            
+        with patch("redis_test_mcp_tools.config.config.project_root", temp_project_dir):
+            result = await handle_call_tool(
+                "find_untested_code", {"source_dir": "src", "test_dir": "tests"}
+            )
+
             assert isinstance(result, list)
             assert len(result) == 1
             assert isinstance(result[0], types.TextContent)
-            
+
             response_data = json.loads(result[0].text)
-            assert 'analysis_summary' in response_data
-    
+            assert "analysis_summary" in response_data
+
     @pytest.mark.asyncio
     async def test_handle_call_tool_suggest_test_cases(self, temp_python_file):
         """Test calling suggest_test_cases tool"""
-        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
-            result = await handle_call_tool("suggest_test_cases", {
-                "file_path": temp_python_file.name
-            })
-            
+        with patch(
+            "redis_test_mcp_tools.config.config.project_root", temp_python_file.parent
+        ):
+            result = await handle_call_tool(
+                "suggest_test_cases", {"file_path": temp_python_file.name}
+            )
+
             assert isinstance(result, list)
             assert len(result) == 1
             assert isinstance(result[0], types.TextContent)
-            
+
             response_data = json.loads(result[0].text)
-            assert 'test_suggestions' in response_data
-            assert 'recommended_framework' in response_data
-    
+            assert "test_suggestions" in response_data
+            assert "recommended_framework" in response_data
+
     @pytest.mark.asyncio
-    async def test_handle_call_tool_suggest_test_cases_with_options(self, temp_python_file):
+    async def test_handle_call_tool_suggest_test_cases_with_options(
+        self, temp_python_file
+    ):
         """Test calling suggest_test_cases tool with options"""
-        with patch('redis_test_mcp_tools.config.config.project_root', temp_python_file.parent):
-            result = await handle_call_tool("suggest_test_cases", {
-                "file_path": temp_python_file.name,
-                "function_name": "simple_function",
-                "framework": "pytest"
-            })
-            
+        with patch(
+            "redis_test_mcp_tools.config.config.project_root", temp_python_file.parent
+        ):
+            result = await handle_call_tool(
+                "suggest_test_cases",
+                {
+                    "file_path": temp_python_file.name,
+                    "function_name": "simple_function",
+                    "framework": "pytest",
+                },
+            )
+
             assert isinstance(result, list)
             assert len(result) == 1
             assert isinstance(result[0], types.TextContent)
-            
+
             response_data = json.loads(result[0].text)
-            assert 'test_suggestions' in response_data
-            assert response_data['recommended_framework'] == "pytest"
-    
+            assert "test_suggestions" in response_data
+            assert response_data["recommended_framework"] == "pytest"
+
     @pytest.mark.asyncio
     async def test_handle_call_tool_get_test_coverage_info(self, temp_project_dir):
         """Test calling get_test_coverage_info tool"""
-        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
+        with patch("redis_test_mcp_tools.config.config.project_root", temp_project_dir):
             result = await handle_call_tool("get_test_coverage_info", {})
-            
+
             assert isinstance(result, list)
             assert len(result) == 1
             assert isinstance(result[0], types.TextContent)
-            
+
             # This should return an error since no coverage file exists
             response_data = json.loads(result[0].text)
-            assert 'error' in response_data
-    
+            assert "error" in response_data
+
     @pytest.mark.asyncio
-    async def test_handle_call_tool_get_test_coverage_info_with_file(self, temp_project_dir):
+    async def test_handle_call_tool_get_test_coverage_info_with_file(
+        self, temp_project_dir
+    ):
         """Test calling get_test_coverage_info tool with custom file"""
         coverage_file = temp_project_dir / "custom_coverage"
         coverage_file.write_text("mock coverage")
-        
-        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
-            result = await handle_call_tool("get_test_coverage_info", {
-                "coverage_file": str(coverage_file)
-            })
-            
+
+        with patch("redis_test_mcp_tools.config.config.project_root", temp_project_dir):
+            result = await handle_call_tool(
+                "get_test_coverage_info", {"coverage_file": str(coverage_file)}
+            )
+
             assert isinstance(result, list)
             assert len(result) == 1
             assert isinstance(result[0], types.TextContent)
-    
+
     @pytest.mark.asyncio
     async def test_handle_call_tool_unknown_tool(self):
         """Test calling unknown tool"""
         result = await handle_call_tool("unknown_tool", {})
-        
+
         assert isinstance(result, list)
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
         assert "Unknown tool" in result[0].text
-    
+
     @pytest.mark.asyncio
     async def test_handle_call_tool_error_handling(self, temp_project_dir):
         """Test error handling in handle_call_tool"""
-        with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
-            result = await handle_call_tool("parse_module", {
-                "file_path": "nonexistent.py"
-            })
-            
+        with patch("redis_test_mcp_tools.config.config.project_root", temp_project_dir):
+            result = await handle_call_tool(
+                "parse_module", {"file_path": "nonexistent.py"}
+            )
+
             assert isinstance(result, list)
             assert len(result) == 1
             assert isinstance(result[0], types.TextContent)
-            
+
             # Should contain error information
             response_data = json.loads(result[0].text)
-            assert 'error' in response_data
+            assert "error" in response_data
 
 
 class TestServerToolsWithoutMCP:
     """Test server tools functionality without MCP dependency"""
-    
+
     @pytest.mark.skipif(HAS_MCP, reason="Testing without MCP")
     def test_server_tools_without_mcp(self):
         """Test that server tools can be imported without MCP"""
         # This test ensures the module can be imported even without MCP
         # The actual server functionality would need MCP to work
         assert True  # If we get here, import worked
-    
+
     def test_mock_types_structure(self):
         """Test that mock types have expected structure"""
         if not HAS_MCP:
@@ -474,146 +504,149 @@ class TestServerToolsWithoutMCP:
 
 class TestServerToolsEdgeCases:
     """Test edge cases and error conditions for server tools"""
-    
+
     @pytest.mark.skipif(not HAS_MCP, reason="MCP not available for testing")
     @pytest.mark.asyncio
     async def test_handle_call_tool_with_missing_arguments(self):
         """Test calling tools with missing required arguments"""
-        result = await handle_call_tool("get_function_details", {
-            "file_path": "test.py"
-            # Missing function_name
-        })
-        
+        result = await handle_call_tool(
+            "get_function_details",
+            {
+                "file_path": "test.py"
+                # Missing function_name
+            },
+        )
+
         assert isinstance(result, list)
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
-        
+
         # Error is returned as plain text, not JSON
         error_text = result[0].text
         assert isinstance(error_text, str)
-        assert 'error' in error_text.lower() or 'keyerror' in error_text.lower()
-    
+        assert "error" in error_text.lower() or "keyerror" in error_text.lower()
+
     @pytest.mark.skipif(not HAS_MCP, reason="MCP not available for testing")
     @pytest.mark.asyncio
     async def test_handle_call_tool_with_invalid_arguments(self):
         """Test calling tools with invalid arguments"""
-        result = await handle_call_tool("read_file", {
-            "file_path": "test.py",
-            "max_size": "invalid"  # Should be integer
-        })
-        
+        result = await handle_call_tool(
+            "read_file",
+            {"file_path": "test.py", "max_size": "invalid"},  # Should be integer
+        )
+
         assert isinstance(result, list)
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
-        
+
         # Should handle the error gracefully
         response_text = result[0].text
         assert isinstance(response_text, str)
-    
+
     @pytest.mark.skipif(not HAS_MCP, reason="MCP not available for testing")
     @pytest.mark.asyncio
     async def test_handle_call_tool_with_empty_arguments(self):
         """Test calling tools with empty arguments"""
         result = await handle_call_tool("find_python_files", {})
-        
+
         assert isinstance(result, list)
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
-        
+
         # Should work with default values
         response_data = json.loads(result[0].text)
         assert isinstance(response_data, list)
-    
+
     @pytest.mark.skipif(not HAS_MCP, reason="MCP not available for testing")
     @pytest.mark.asyncio
     async def test_handle_call_tool_realistic_serialization_scenarios(self):
         """Test handling of realistic JSON serialization edge cases"""
-        from pathlib import Path
         from datetime import datetime
-        
+        from pathlib import Path
+
         # Test the serialization functionality directly by testing _safe_json_dumps
         from redis_test_mcp_tools.server import _safe_json_dumps
-        
+
         # Test 1: Path objects (common in file operations)
         path_data = {
-            'file_path': Path('/some/path/file.py'),
-            'functions': [{'name': 'test', 'path': Path('/another/path')}]
+            "file_path": Path("/some/path/file.py"),
+            "functions": [{"name": "test", "path": Path("/another/path")}],
         }
-        
+
         result_json = _safe_json_dumps(path_data)
         assert isinstance(result_json, str)
         response_data = json.loads(result_json)
         assert isinstance(response_data, dict)
-        assert isinstance(response_data['file_path'], str)  # Path converted to string
-        assert response_data['file_path'] == '/some/path/file.py'
-        
+        assert isinstance(response_data["file_path"], str)  # Path converted to string
+        assert response_data["file_path"] == "/some/path/file.py"
+
         # Test 2: Set objects (common in configurations)
         set_data = {
-            'extensions': {'.py', '.pyi'},
-            'ignored_dirs': {'__pycache__', '.git'}
+            "extensions": {".py", ".pyi"},
+            "ignored_dirs": {"__pycache__", ".git"},
         }
-        
+
         result_json = _safe_json_dumps(set_data)
         response_data = json.loads(result_json)
         # Sets should be converted to lists
-        assert isinstance(response_data.get('extensions'), list)
-        assert set(response_data['extensions']) == {'.py', '.pyi'}  # Content preserved
-        
+        assert isinstance(response_data.get("extensions"), list)
+        assert set(response_data["extensions"]) == {".py", ".pyi"}  # Content preserved
+
         # Test 3: Complex nested structure with mixed types
         complex_data = {
-            'file_info': {
-                'path': Path('/test/file.py'),
-                'extensions': {'.py', '.pyi'},
-                'size': 1024
+            "file_info": {
+                "path": Path("/test/file.py"),
+                "extensions": {".py", ".pyi"},
+                "size": 1024,
             },
-            'metadata': {
-                'created': datetime.now(),
-                'nested_path': Path('/nested/path'),
-                'tags': {'python', 'test'}
-            }
+            "metadata": {
+                "created": datetime.now(),
+                "nested_path": Path("/nested/path"),
+                "tags": {"python", "test"},
+            },
         }
-        
+
         result_json = _safe_json_dumps(complex_data)
         # Should handle complex nested structures gracefully
         assert len(result_json) > 0
         response_data = json.loads(result_json)
         assert isinstance(response_data, dict)
         # Nested Path objects should be converted
-        assert isinstance(response_data['file_info']['path'], str)
-        assert isinstance(response_data['metadata']['nested_path'], str)
+        assert isinstance(response_data["file_info"]["path"], str)
+        assert isinstance(response_data["metadata"]["nested_path"], str)
         # Nested sets should be converted to lists
-        assert isinstance(response_data['file_info']['extensions'], list)
-    
+        assert isinstance(response_data["file_info"]["extensions"], list)
+
     @pytest.mark.skipif(not HAS_MCP, reason="MCP not available for testing")
     @pytest.mark.asyncio
     async def test_handle_call_tool_exception_handling(self):
         """Test handling of exceptions in tool calls"""
-        with patch('redis_test_mcp_tools.tools.ast_tools.parse_module_ast', side_effect=Exception("Test exception")):
-            result = await handle_call_tool("parse_module", {
-                "file_path": "test.py"
-            })
-            
+        with patch(
+            "redis_test_mcp_tools.tools.ast_tools.parse_module_ast",
+            side_effect=Exception("Test exception"),
+        ):
+            result = await handle_call_tool("parse_module", {"file_path": "test.py"})
+
             assert isinstance(result, list)
             assert len(result) == 1
             assert isinstance(result[0], types.TextContent)
-            
+
             # Should handle exception gracefully
             response_text = result[0].text
             assert isinstance(response_text, str)
-    
+
     @pytest.mark.skipif(not HAS_MCP, reason="MCP not available for testing")
     @pytest.mark.asyncio
     async def test_handle_call_tool_with_none_arguments(self):
         """Test calling tools with None arguments"""
-        result = await handle_call_tool("get_directory_structure", {
-            "directory": None,
-            "max_depth": None
-        })
-        
+        result = await handle_call_tool(
+            "get_directory_structure", {"directory": None, "max_depth": None}
+        )
+
         assert isinstance(result, list)
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
-        
+
         # Should handle None values gracefully
         response_data = json.loads(result[0].text)
-        assert 'type' in response_data or 'error' in response_data 
+        assert "type" in response_data or "error" in response_data

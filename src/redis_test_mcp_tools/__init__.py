@@ -9,7 +9,7 @@ __version__ = "0.1.0"
 __author__ = "Redis Team"
 __email__ = "redis-team@example.com"
 
-from .main import server
 from .config import config
+from .main import server
 
-__all__ = ["server", "config"] 
+__all__ = ["server", "config"]
