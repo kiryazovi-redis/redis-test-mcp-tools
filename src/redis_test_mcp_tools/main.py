@@ -21,8 +21,8 @@ from mcp.server import NotificationOptions
 import mcp.server.stdio
 
 # Import configuration and server
-from .config import config
-from .server import server
+from src.redis_test_mcp_tools.config import config
+from src.redis_test_mcp_tools.server import server
 
 
 async def main():

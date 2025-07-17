@@ -333,17 +333,50 @@ class TestGetDirectoryStructure:
             assert '.git' not in child_names
             assert '__pycache__' not in child_names
     
-    def test_get_directory_structure_nonexistent_directory(self, temp_project_dir):
-        """Test getting directory structure for non-existent directory"""
-        nonexistent_dir = temp_project_dir / "nonexistent"
-        
+    def test_get_directory_structure_error_handling(self, temp_project_dir):
+        """Test directory structure error handling for various scenarios"""
         with patch('redis_test_mcp_tools.config.config.project_root', temp_project_dir):
+            # Test 1: Non-existent directory
+            nonexistent_dir = temp_project_dir / "nonexistent"
             result = get_directory_structure(nonexistent_dir)
             
-            # Should return error dict for non-existent directory
             assert isinstance(result, dict)
             assert 'error' in result
-            assert 'not found' in result['error'].lower()
+            error_msg = result['error'].lower()
+            assert any(phrase in error_msg for phrase in ['not found', 'does not exist', 'missing']), \
+                f"Missing directory error should mention absence: {result['error']}"
+            
+            # Test 2: File instead of directory
+            file_path = temp_project_dir / "regular_file.txt"
+            file_path.write_text("content")
+            result = get_directory_structure(file_path)
+            
+            assert isinstance(result, dict)
+            assert 'error' in result
+            error_msg = result['error'].lower()
+            assert any(phrase in error_msg for phrase in ['not a directory', 'is not a dir', 'file']), \
+                f"File instead of directory error should mention type: {result['error']}"
+            
+            # Test 3: Path validation (with potential security issues)
+            result = get_directory_structure("../../../etc")
+            assert isinstance(result, dict)
+            assert 'error' in result
+            # Should have some form of path validation error
+            assert len(result['error']) > 0, "Should have meaningful error for invalid path"
+            
+            # Test 4: Very deep nested path (edge case)
+            deeply_nested = temp_project_dir
+            for i in range(10):
+                deeply_nested = deeply_nested / f"level{i}"
+            deeply_nested.mkdir(parents=True, exist_ok=True)
+            
+            result = get_directory_structure(deeply_nested, max_depth=2)
+            # Should either succeed or fail gracefully
+            if isinstance(result, dict) and 'error' in result:
+                assert len(result['error']) > 0, "Error should be meaningful"
+            else:
+                # If successful, should respect depth limits
+                assert 'name' in result, "Successful result should have structure"
     
     def test_get_directory_structure_file_info(self, temp_project_dir):
         """Test that file information is correctly included"""

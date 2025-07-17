@@ -18,20 +18,59 @@ def get_ast_from_file(file_path: str) -> Union[ast.AST, Dict[str, str]]:
     """Parse a Python file and return its AST or error information."""
     try:
         full_path = config.project_root / file_path
+        
+        # Check if file exists first
         if not full_path.exists():
             return {'error': f'File not found: {file_path}'}
         
+        # Check if it's actually a file (not directory)
+        if not full_path.is_file():
+            return {'error': f'Path is not a file: {file_path}'}
+        
+        # Check file type before trying to read
         if not config.is_python_file(full_path):
             return {'error': f'Not a Python file: {file_path}'}
         
-        with open(full_path, 'r', encoding='utf-8') as f:
-            content = f.read()
+        # Check file size to prevent memory issues
+        try:
+            file_size = full_path.stat().st_size
+            if file_size > config.max_file_size * 2:  # Allow larger files for AST parsing
+                return {'error': f'File too large for AST parsing: {file_path} ({file_size} bytes)'}
+        except (OSError, PermissionError) as e:
+            return {'error': f'Cannot access file: {file_path} - {str(e)}'}
         
-        return ast.parse(content)
-    except SyntaxError as e:
-        return {'error': f'Syntax error in {file_path}: {str(e)}'}
+        # Try to read the file content
+        try:
+            with open(full_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+        except UnicodeDecodeError as e:
+            # Try with different encoding or error handling
+            try:
+                with open(full_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                return {'error': f'File contains non-UTF-8 characters, some content may be lost: {file_path}'}
+            except Exception:
+                return {'error': f'Cannot decode file as text: {file_path}'}
+        except PermissionError:
+            return {'error': f'Permission denied reading file: {file_path}'}
+        except MemoryError:
+            return {'error': f'File too large to load into memory: {file_path}'}
+        except OSError as e:
+            return {'error': f'OS error reading file: {file_path} - {str(e)}'}
+        
+        # Try to parse the AST
+        try:
+            return ast.parse(content)
+        except SyntaxError as e:
+            return {'error': f'Syntax error in {file_path} at line {e.lineno}: {str(e)}'}
+        except RecursionError:
+            return {'error': f'File structure too complex for AST parsing: {file_path}'}
+        except MemoryError:
+            return {'error': f'File too complex to parse (memory error): {file_path}'}
+        
     except Exception as e:
-        return {'error': f'Error parsing {file_path}: {str(e)}'}
+        # Catch-all for any unexpected errors
+        return {'error': f'Unexpected error parsing {file_path}: {str(e)}'}
 
 
 def extract_docstring(node: ast.AST) -> Optional[str]:

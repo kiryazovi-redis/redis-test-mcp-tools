@@ -206,48 +206,87 @@ def get_directory_structure(directory: Optional[Path] = None, max_depth: int = N
     if max_depth is None:
         max_depth = config.max_directory_depth
     
-    # Check if directory exists
-    if not directory.exists():
-        return {'error': f'Directory not found: {directory}'}
+    # Check if directory exists and is accessible
+    try:
+        if not directory.exists():
+            return {'error': f'Directory not found: {directory}'}
+        
+        if not directory.is_dir():
+            return {'error': f'Path is not a directory: {directory}'}
+        
+        # Test if we can access the directory
+        try:
+            list(directory.iterdir())
+        except PermissionError:
+            return {'error': f'Permission denied accessing directory: {directory}'}
+        except OSError as e:
+            return {'error': f'Cannot access directory: {directory} - {str(e)}'}
+            
+    except PermissionError:
+        return {'error': f'Permission denied accessing path: {directory}'}
+    except OSError as e:
+        return {'error': f'OS error accessing path: {directory} - {str(e)}'}
+    except Exception as e:
+        return {'error': f'Unexpected error accessing directory: {directory} - {str(e)}'}
     
     def build_tree(path: Path, current_depth: int = 0) -> Dict[str, Any]:
         if current_depth > max_depth or is_ignored_path(path):
             return None
         
-        if not path.exists():
+        # Check if path still exists (handle race conditions)
+        try:
+            if not path.exists():
+                return None
+        except (OSError, PermissionError):
+            # Path became inaccessible during traversal
             return None
         
-        result = {
-            'name': path.name,
-            'type': 'directory' if path.is_dir() else 'file',
-            'path': get_relative_path(path)
-        }
-        
-        if path.is_dir():
-            children = []
-            try:
-                for child in sorted(path.iterdir()):
-                    if not is_ignored_path(child):
-                        child_tree = build_tree(child, current_depth + 1)
-                        if child_tree:
-                            children.append(child_tree)
-            except PermissionError:
-                pass
+        try:
+            # Determine type with race condition protection
+            is_directory = path.is_dir()
+            result = {
+                'name': path.name,
+                'type': 'directory' if is_directory else 'file',
+                'path': get_relative_path(path)
+            }
             
-            result['children'] = children
-        else:
-            try:
-                stat = path.stat()
-                result['size'] = stat.st_size
-                result['modified'] = stat.st_mtime
-                result['is_python'] = config.is_python_file(path)
-                result['is_text'] = config.is_text_file(path)
-            except (OSError, PermissionError):
-                # Handle cases where stat fails
-                result['size'] = 0
-                result['modified'] = 0
-                result['is_python'] = False
-                result['is_text'] = False
+            if is_directory:
+                children = []
+                try:
+                    # Use sorted() with error handling for race conditions
+                    child_paths = list(path.iterdir())
+                    for child in sorted(child_paths):
+                        if not is_ignored_path(child):
+                            child_tree = build_tree(child, current_depth + 1)
+                            if child_tree:
+                                children.append(child_tree)
+                except PermissionError:
+                    # No access to directory contents
+                    result['access_denied'] = True
+                except OSError:
+                    # Directory became inaccessible or was deleted
+                    result['inaccessible'] = True
+                
+                result['children'] = children
+            else:
+                # Handle file metadata with error recovery
+                try:
+                    stat = path.stat()
+                    result['size'] = stat.st_size
+                    result['modified'] = stat.st_mtime
+                    result['is_python'] = config.is_python_file(path)
+                    result['is_text'] = config.is_text_file(path)
+                except (OSError, PermissionError):
+                    # File became inaccessible or was deleted
+                    result['size'] = 0
+                    result['modified'] = 0
+                    result['is_python'] = False
+                    result['is_text'] = False
+                    result['stat_failed'] = True
+        
+        except (OSError, PermissionError):
+            # Path became completely inaccessible
+            return None
         
         return result
     

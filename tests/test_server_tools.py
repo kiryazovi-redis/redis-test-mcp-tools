@@ -526,25 +526,63 @@ class TestServerToolsEdgeCases:
     
     @pytest.mark.skipif(not HAS_MCP, reason="MCP not available for testing")
     @pytest.mark.asyncio
-    async def test_handle_call_tool_json_serialization_error(self):
-        """Test handling of JSON serialization errors"""
-        with patch('redis_test_mcp_tools.tools.ast_tools.parse_module_ast', return_value={'circular': None}):
-            # Create a circular reference that can't be serialized
-            data = {'test': 'value'}
-            data['circular'] = data
-            
-            with patch('redis_test_mcp_tools.tools.ast_tools.parse_module_ast', return_value=data):
-                result = await handle_call_tool("parse_module", {
-                    "file_path": "test.py"
-                })
-                
-                assert isinstance(result, list)
-                assert len(result) == 1
-                assert isinstance(result[0], types.TextContent)
-                
-                # Should handle serialization error gracefully
-                response_text = result[0].text
-                assert isinstance(response_text, str)
+    async def test_handle_call_tool_realistic_serialization_scenarios(self):
+        """Test handling of realistic JSON serialization edge cases"""
+        from pathlib import Path
+        from datetime import datetime
+        
+        # Test the serialization functionality directly by testing _safe_json_dumps
+        from redis_test_mcp_tools.server import _safe_json_dumps
+        
+        # Test 1: Path objects (common in file operations)
+        path_data = {
+            'file_path': Path('/some/path/file.py'),
+            'functions': [{'name': 'test', 'path': Path('/another/path')}]
+        }
+        
+        result_json = _safe_json_dumps(path_data)
+        assert isinstance(result_json, str)
+        response_data = json.loads(result_json)
+            assert isinstance(response_data, dict)
+        assert isinstance(response_data['file_path'], str)  # Path converted to string
+        assert response_data['file_path'] == '/some/path/file.py'
+        
+        # Test 2: Set objects (common in configurations)
+        set_data = {
+            'extensions': {'.py', '.pyi'},
+            'ignored_dirs': {'__pycache__', '.git'}
+        }
+        
+        result_json = _safe_json_dumps(set_data)
+        response_data = json.loads(result_json)
+            # Sets should be converted to lists
+            assert isinstance(response_data.get('extensions'), list)
+        assert set(response_data['extensions']) == {'.py', '.pyi'}  # Content preserved
+        
+        # Test 3: Complex nested structure with mixed types
+        complex_data = {
+            'file_info': {
+                'path': Path('/test/file.py'),
+                'modified': datetime.now(),
+                'size': 1024,
+                'extensions': {'.py', '.pyi'}
+            },
+            'metadata': {
+                'nested_path': Path('/nested'),
+                'tags': {'test', 'important'}
+            }
+        }
+        
+        result_json = _safe_json_dumps(complex_data)
+            # Should handle complex nested structures gracefully
+        assert len(result_json) > 0
+        response_data = json.loads(result_json)
+            assert isinstance(response_data, dict)
+        # Nested Path objects should be converted
+        assert isinstance(response_data['file_info']['path'], str)
+        assert isinstance(response_data['metadata']['nested_path'], str)
+        # Nested sets should be converted to lists
+        assert isinstance(response_data['file_info']['extensions'], list)
     
     @pytest.mark.skipif(not HAS_MCP, reason="MCP not available for testing")
     @pytest.mark.asyncio

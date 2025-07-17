@@ -34,6 +34,189 @@ from .tools.test_tools import (
     suggest_test_cases, get_test_coverage_info
 )
 
+def _safe_json_dumps(obj: Any, indent: int = 2) -> str:
+    """
+    Safely serialize an object to JSON with proper error handling.
+    
+    Args:
+        obj: Object to serialize
+        indent: JSON indentation
+        
+    Returns:
+        JSON string or error message
+    """
+    try:
+        # First attempt: direct serialization
+        return json.dumps(obj, indent=indent)
+    except TypeError as e:
+        # Handle non-serializable objects
+        try:
+            # Convert Path objects and other common non-serializable types
+            def convert_obj(item):
+                if isinstance(item, Path):
+                    return str(item)
+                elif hasattr(item, '__dict__'):
+                    return str(item)
+                elif hasattr(item, 'isoformat'):  # datetime objects
+                    return item.isoformat()
+                elif isinstance(item, set):
+                    return list(item)
+                else:
+                    return str(item)
+            
+            # Try to convert and serialize
+            converted = json.loads(json.dumps(obj, default=convert_obj))
+            return json.dumps(converted, indent=indent)
+        except Exception:
+            # Last resort: return error info
+            return json.dumps({
+                'error': f'Serialization error: {str(e)}',
+                'type': str(type(obj)),
+                'partial_data': str(obj)[:500] + '...' if len(str(obj)) > 500 else str(obj)
+            }, indent=indent)
+    except (ValueError, RecursionError) as e:
+        # Handle circular references and other JSON errors
+        return json.dumps({
+            'error': f'JSON error: {str(e)}',
+            'type': str(type(obj))
+        }, indent=indent)
+    except Exception as e:
+        # Catch-all for any other errors
+        return json.dumps({
+            'error': f'Unexpected serialization error: {str(e)}',
+            'type': str(type(obj))
+        }, indent=indent)
+
+
+def _validate_file_path(file_path: str) -> str:
+    """
+    Validate and sanitize file path parameter.
+    
+    Args:
+        file_path: The file path to validate
+        
+    Returns:
+        Validated file path
+        
+    Raises:
+        ValueError: If path is invalid or unsafe
+    """
+    if not file_path or not isinstance(file_path, str):
+        raise ValueError("file_path must be a non-empty string")
+    
+    # Basic path validation (more detailed validation is done in file_tools)
+    if '..' in file_path or file_path.startswith('/'):
+        raise ValueError("Invalid path: path traversal or absolute paths not allowed")
+    
+    return file_path.strip()
+
+
+def _validate_max_size(max_size: Any) -> int:
+    """
+    Validate max_size parameter.
+    
+    Args:
+        max_size: The max size value to validate
+        
+    Returns:
+        Validated max size as integer
+        
+    Raises:
+        ValueError: If max_size is invalid
+    """
+    if max_size is None:
+        return config.max_file_size
+    
+    try:
+        size = int(max_size)
+        if size < 0:
+            raise ValueError("max_size must be non-negative")
+        if size > 100 * 1024 * 1024:  # 100MB limit
+            raise ValueError("max_size too large (max 100MB)")
+        return size
+    except (TypeError, ValueError) as e:
+        raise ValueError(f"max_size must be a valid integer: {str(e)}")
+
+
+def _validate_max_depth(max_depth: Any) -> int:
+    """
+    Validate max_depth parameter.
+    
+    Args:
+        max_depth: The max depth value to validate
+        
+    Returns:
+        Validated max depth as integer
+        
+    Raises:
+        ValueError: If max_depth is invalid
+    """
+    if max_depth is None:
+        return config.max_directory_depth
+    
+    try:
+        depth = int(max_depth)
+        if depth < 0:
+            raise ValueError("max_depth must be non-negative")
+        if depth > 20:  # Reasonable limit
+            raise ValueError("max_depth too large (max 20)")
+        return depth
+    except (TypeError, ValueError) as e:
+        raise ValueError(f"max_depth must be a valid integer: {str(e)}")
+
+
+def _validate_framework(framework: Any) -> Optional[str]:
+    """
+    Validate testing framework parameter.
+    
+    Args:
+        framework: The framework value to validate
+        
+    Returns:
+        Validated framework string or None
+        
+    Raises:
+        ValueError: If framework is invalid
+    """
+    if framework is None:
+        return None
+    
+    if not isinstance(framework, str):
+        raise ValueError("framework must be a string")
+    
+    framework = framework.strip().lower()
+    if framework not in ('pytest', 'unittest'):
+        raise ValueError("framework must be 'pytest' or 'unittest'")
+    
+    return framework
+
+
+def _validate_identifier(identifier: str, name: str) -> str:
+    """
+    Validate function/class name parameter.
+    
+    Args:
+        identifier: The identifier to validate
+        name: Name of the parameter for error messages
+        
+    Returns:
+        Validated identifier
+        
+    Raises:
+        ValueError: If identifier is invalid
+    """
+    if not identifier or not isinstance(identifier, str):
+        raise ValueError(f"{name} must be a non-empty string")
+    
+    identifier = identifier.strip()
+    
+    # Basic Python identifier validation
+    if not identifier.replace('_', '').replace('.', '').isalnum():
+        raise ValueError(f"{name} must be a valid Python identifier")
+    
+    return identifier
+
+
 # Create the server instance
 server = Server(config.server_name)
 
@@ -304,79 +487,85 @@ async def handle_call_tool(name: str, arguments: Dict[str, Any]) -> List[TextCon
         if name == "find_python_files":
             directory = arguments.get("directory")
             files = find_python_files(directory)
-            return [TextContent(type="text", text=json.dumps(files, indent=2))]
+            return [TextContent(type="text", text=_safe_json_dumps(files))]
             
         elif name == "read_file":
-            file_path = arguments["file_path"]
-            max_size = arguments.get("max_size", config.max_file_size)
+            file_path = _validate_file_path(arguments["file_path"])
+            max_size = _validate_max_size(arguments.get("max_size"))
             content = read_file_content(file_path, max_size)
-            return [TextContent(type="text", text=json.dumps(content, indent=2))]
+            return [TextContent(type="text", text=_safe_json_dumps(content))]
             
         elif name == "get_directory_structure":
             directory = arguments.get("directory")
-            max_depth = arguments.get("max_depth", config.max_directory_depth)
+            if directory is not None:
+                directory = _validate_file_path(directory)
+            max_depth = _validate_max_depth(arguments.get("max_depth"))
             structure = get_directory_structure(directory, max_depth)
-            return [TextContent(type="text", text=json.dumps(structure, indent=2))]
+            return [TextContent(type="text", text=_safe_json_dumps(structure))]
             
         elif name == "get_project_info":
             info = get_project_info()
-            return [TextContent(type="text", text=json.dumps(info, indent=2))]
+            return [TextContent(type="text", text=_safe_json_dumps(info))]
             
         elif name == "parse_module":
-            file_path = arguments["file_path"]
+            file_path = _validate_file_path(arguments["file_path"])
             result = parse_module_ast(file_path)
-            return [TextContent(type="text", text=json.dumps(result, indent=2))]
+            return [TextContent(type="text", text=_safe_json_dumps(result))]
             
         elif name == "get_function_details":
-            file_path = arguments["file_path"]
-            function_name = arguments["function_name"]
+            file_path = _validate_file_path(arguments["file_path"])
+            function_name = _validate_identifier(arguments["function_name"], "function_name")
             result = get_function_details(file_path, function_name)
-            return [TextContent(type="text", text=json.dumps(result, indent=2))]
+            return [TextContent(type="text", text=_safe_json_dumps(result))]
             
         elif name == "get_class_details":
-            file_path = arguments["file_path"]
-            class_name = arguments["class_name"]
+            file_path = _validate_file_path(arguments["file_path"])
+            class_name = _validate_identifier(arguments["class_name"], "class_name")
             result = get_class_details(file_path, class_name)
-            return [TextContent(type="text", text=json.dumps(result, indent=2))]
+            return [TextContent(type="text", text=_safe_json_dumps(result))]
             
         elif name == "find_imports":
             file_path = arguments["file_path"]
             result = find_imports_in_file(file_path)
-            return [TextContent(type="text", text=json.dumps(result, indent=2))]
+            return [TextContent(type="text", text=_safe_json_dumps(result))]
             
         elif name == "get_type_hints":
             file_path = arguments["file_path"]
             result = get_type_hints_from_file(file_path)
-            return [TextContent(type="text", text=json.dumps(result, indent=2))]
+            return [TextContent(type="text", text=_safe_json_dumps(result))]
             
         elif name == "analyze_test_files":
             directory = arguments.get("directory")
             result = analyze_test_files(directory)
-            return [TextContent(type="text", text=json.dumps(result, indent=2))]
+            return [TextContent(type="text", text=_safe_json_dumps(result))]
             
         elif name == "get_test_patterns":
             directory = arguments.get("directory")
             result = get_test_patterns(directory)
-            return [TextContent(type="text", text=json.dumps(result, indent=2))]
+            return [TextContent(type="text", text=_safe_json_dumps(result))]
             
         elif name == "find_untested_code":
             source_dir = arguments.get("source_dir")
             test_dir = arguments.get("test_dir")
             result = find_untested_code(source_dir, test_dir)
-            return [TextContent(type="text", text=json.dumps(result, indent=2))]
+            return [TextContent(type="text", text=_safe_json_dumps(result))]
             
         elif name == "suggest_test_cases":
-            file_path = arguments["file_path"]
+            file_path = _validate_file_path(arguments["file_path"])
             function_name = arguments.get("function_name")
+            if function_name is not None:
+                function_name = _validate_identifier(function_name, "function_name")
             class_name = arguments.get("class_name")
-            framework = arguments.get("framework")
+            if class_name is not None:
+                class_name = _validate_identifier(class_name, "class_name")
+            framework = _validate_framework(arguments.get("framework"))
             result = suggest_test_cases(file_path, function_name, class_name, framework)
-            return [TextContent(type="text", text=json.dumps(result, indent=2))]
+            return [TextContent(type="text", text=_safe_json_dumps(result))]
             
         elif name == "get_test_coverage_info":
             coverage_file = arguments.get("coverage_file")
             result = get_test_coverage_info(coverage_file)
-            return [TextContent(type="text", text=json.dumps(result, indent=2))]
+            return [TextContent(type="text", text=_safe_json_dumps(result))]
             
         else:
             raise ValueError(f"Unknown tool: {name}")

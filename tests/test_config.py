@@ -62,11 +62,39 @@ class TestMCPServerConfig:
         test_config = MCPServerConfig()
         assert test_config.debug is True
     
-    @patch.dict(os.environ, {'MCP_DEBUG': 'invalid'})
-    def test_debug_environment_variable_invalid(self):
-        """Test debug flag with invalid value defaults to false"""
-        test_config = MCPServerConfig()
-        assert test_config.debug is False
+    @patch.dict(os.environ, {}, clear=True)  # Clear environment
+    def test_debug_environment_variable_comprehensive(self):
+        """Test debug flag parsing with comprehensive edge cases"""
+        # Test various truthy values
+        truthy_values = ['true', 'True', 'TRUE', '1', 'yes', 'Yes', 'on', 'enabled']
+        for value in truthy_values:
+            with patch.dict(os.environ, {'MCP_DEBUG': value}):
+                config = MCPServerConfig()
+                assert config.debug is True, f"Value '{value}' should be truthy"
+        
+        # Test various falsy values
+        falsy_values = ['false', 'False', 'FALSE', '0', 'no', 'No', 'off', 'disabled', '']
+        for value in falsy_values:
+            with patch.dict(os.environ, {'MCP_DEBUG': value}):
+                config = MCPServerConfig()
+                assert config.debug is False, f"Value '{value}' should be falsy"
+        
+        # Test invalid/malformed values (should default to False)
+        invalid_values = ['invalid', 'maybe', '2', '-1', 'truee', 'fals', '   ', 'null', 'None']
+        for value in invalid_values:
+            with patch.dict(os.environ, {'MCP_DEBUG': value}):
+                config = MCPServerConfig()
+                assert config.debug is False, f"Invalid value '{value}' should default to False"
+        
+        # Test whitespace handling
+        with patch.dict(os.environ, {'MCP_DEBUG': '  true  '}):
+            config = MCPServerConfig()
+            assert config.debug is True, "Whitespace should be stripped"
+        
+        # Test missing environment variable
+        with patch.dict(os.environ, {}, clear=True):
+            config = MCPServerConfig()
+            assert config.debug is False, "Missing env var should default to False"
     
     @patch.dict(os.environ, {'MCP_LOG_LEVEL': 'DEBUG'})
     def test_log_level_environment_variable(self):

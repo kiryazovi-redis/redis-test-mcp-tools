@@ -57,8 +57,10 @@ def _detect_framework_context(file_path: str, node: ast.FunctionDef, func_info: 
     unittest_indicators = 0
     
     for import_info in file_imports:
-        module = import_info.get('module', '').lower()
-        name = import_info.get('name', '').lower()
+        module = import_info.get('module', '') or ''
+        name = import_info.get('name', '') or ''
+        module = module.lower()
+        name = name.lower()
         
         if 'pytest' in module or 'pytest' in name:
             pytest_indicators += 1

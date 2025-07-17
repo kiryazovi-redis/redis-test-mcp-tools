@@ -1,12 +1,12 @@
 {
   "mcpServers": {
-    "redis-py-test-infra": {
-      "command": "/Users/ivaylo.kiryazov/redis-py-test-infra/.venv/bin/python",
+    "redis-test-mcp-tools": {
+      "command": "/Users/ivaylo.kiryazov/redis-test-mcp-tools/venv/bin/python3",
       "args": [
-        "/Users/ivaylo.kiryazov/redis-py-test-infra/tools/mcp_server/main.py",
+        "/Users/ivaylo.kiryazov/redis-test-mcp-tools/src/redis_test_mcp_tools/main.py",
         "--debug"
       ],
-      "cwd": "/Users/ivaylo.kiryazov/redis-py-test-infra"
+      "cwd": "/Users/ivaylo.kiryazov/redis-test-mcp-tools"
     }
   }
 }

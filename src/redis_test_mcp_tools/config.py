@@ -37,10 +37,46 @@ class MCPServerConfig:
         self.max_directory_depth = 3
         
         # Debug settings
-        self.debug = os.getenv('MCP_DEBUG', 'false').lower() == 'true'
+        self.debug = self._parse_bool_env('MCP_DEBUG', False)
         
         # Logging settings
         self.log_level = os.getenv('MCP_LOG_LEVEL', 'INFO')
+        
+    def _parse_bool_env(self, env_var: str, default: bool) -> bool:
+        """
+        Parse boolean environment variable with robust handling of various formats.
+        
+        Args:
+            env_var: Environment variable name
+            default: Default value if not set or invalid
+            
+        Returns:
+            Boolean value
+        """
+        try:
+            value = os.getenv(env_var)
+            if value is None:
+                return default
+            
+            # Handle string values
+            if isinstance(value, str):
+                value_lower = value.lower().strip()
+                # Truthy values
+                if value_lower in ('true', '1', 'yes', 'on', 'enabled'):
+                    return True
+                # Falsy values
+                elif value_lower in ('false', '0', 'no', 'off', 'disabled', ''):
+                    return False
+                else:
+                    # Invalid string value, use default
+                    return default
+            
+            # Handle non-string values (shouldn't happen with os.getenv, but be safe)
+            return bool(value)
+            
+        except Exception:
+            # Any error in parsing, use default
+            return default
         
     def is_ignored_path(self, path: Path) -> bool:
         """Check if a path should be ignored."""
