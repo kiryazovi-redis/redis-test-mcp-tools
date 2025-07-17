@@ -13,16 +13,6 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock, mock_open, call
 import sys
 
-# Add the src directory to Python path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
-
-@pytest.fixture
-def temp_project_dir():
-    """Create a temporary directory for test projects."""
-    with tempfile.TemporaryDirectory() as temp_dir:
-        yield Path(temp_dir)
-
 from redis_test_mcp_tools.tools.test_tools import (
     _detect_framework_context,
     analyze_test_files,
@@ -31,6 +21,13 @@ from redis_test_mcp_tools.tools.test_tools import (
     suggest_test_cases,
     get_test_coverage_info
 )
+
+
+@pytest.fixture
+def temp_project_dir():
+    """Create a temporary directory for test projects."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        yield Path(temp_dir)
 
 
 class TestDetectFrameworkContext:

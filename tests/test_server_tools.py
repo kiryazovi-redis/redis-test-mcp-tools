@@ -543,7 +543,7 @@ class TestServerToolsEdgeCases:
         result_json = _safe_json_dumps(path_data)
         assert isinstance(result_json, str)
         response_data = json.loads(result_json)
-            assert isinstance(response_data, dict)
+        assert isinstance(response_data, dict)
         assert isinstance(response_data['file_path'], str)  # Path converted to string
         assert response_data['file_path'] == '/some/path/file.py'
         
@@ -555,29 +555,29 @@ class TestServerToolsEdgeCases:
         
         result_json = _safe_json_dumps(set_data)
         response_data = json.loads(result_json)
-            # Sets should be converted to lists
-            assert isinstance(response_data.get('extensions'), list)
+        # Sets should be converted to lists
+        assert isinstance(response_data.get('extensions'), list)
         assert set(response_data['extensions']) == {'.py', '.pyi'}  # Content preserved
         
         # Test 3: Complex nested structure with mixed types
         complex_data = {
             'file_info': {
                 'path': Path('/test/file.py'),
-                'modified': datetime.now(),
-                'size': 1024,
-                'extensions': {'.py', '.pyi'}
+                'extensions': {'.py', '.pyi'},
+                'size': 1024
             },
             'metadata': {
-                'nested_path': Path('/nested'),
-                'tags': {'test', 'important'}
+                'created': datetime.now(),
+                'nested_path': Path('/nested/path'),
+                'tags': {'python', 'test'}
             }
         }
         
         result_json = _safe_json_dumps(complex_data)
-            # Should handle complex nested structures gracefully
+        # Should handle complex nested structures gracefully
         assert len(result_json) > 0
         response_data = json.loads(result_json)
-            assert isinstance(response_data, dict)
+        assert isinstance(response_data, dict)
         # Nested Path objects should be converted
         assert isinstance(response_data['file_info']['path'], str)
         assert isinstance(response_data['metadata']['nested_path'], str)
